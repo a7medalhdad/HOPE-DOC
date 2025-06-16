@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPLOAD REQUESTED</title>
+    <style>
+        /* Draggable Region */
+        .drag-region {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            -webkit-app-region: drag;
+            z-index: 99999;
+        }
+
+        :root {
+            --bg-color: #1a1b26; 
+            --surface-color: #24283b; 
+            --primary-color: #7aa2f7; 
+            --secondary-color: #bb9af7; 
+            --accent-color: #ff9e64; 
+            --text-color: #c0caf5; 
+            --text-secondary-color: #a9b1d6; 
+            --border-color: #3b4261;
+            --success-color: #9ece6a; 
+            --error-color: #f7768e; 
+            --warning-color: #e0af68; 
+            --processing-color: var(--primary-color); 
+            --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Keeping existing font for this tool, can be changed to Roboto */
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e2f; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background-color: #5e5eff; border-radius: 10px; border: 2px solid #1e1e2f; }
+
+        body {
+            font-family: var(--font-primary);
+            margin: 0; 
+            padding: 30px 20px 20px; /* Adjusted top padding */ 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh; 
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: var(--surface-color); 
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); /* Adjusted shadow for new theme */
+            width: 100%;
+            max-width: 550px;
+            border: 1px solid var(--border-color);
+        }
+        h1 {
+            color: var(--primary-color); 
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: var(--text-secondary-color); 
+        }
+        input[type="file"] {
+            display: block;
+            width: 100%; 
+            padding: 12px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        input[type="file"]::file-selector-button {
+            background-color: var(--primary-color);
+            color: var(--bg-color); /* Contrast with primary */
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: -12px; 
+            margin-right: 10px;
+            transition: background-color 0.2s ease;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button {
+            background-color: var(--primary-color); 
+            color: var(--bg-color); /* Contrast with primary */
+            padding: 14px 22px;
+            border: 1px solid var(--border-color); /* Added border */
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            width: 100%;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            margin-top: 10px;
+        }
+        button:hover:not(:disabled) {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        button:disabled {
+            background-color: var(--border-color);
+            color: var(--text-secondary-color);
+            border-color: var(--border-color);
+            cursor: not-allowed;
+        }
+        #message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .success {
+            background-color: rgba(var(--success-color), 0.15); 
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+        .error {
+            background-color: rgba(var(--error-color), 0.15); 
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+        .info {
+            background-color: rgba(var(--primary-color), 0.15); 
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="drag-region"></div>
+    <div class="container">
+        <h1>UPLOAD REQUESTED</h1>
+
+        <label for="excelFile">1. Choose Excel File (.xlsx):</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleFileSelect(event)">
+        
+        <button id="processAndDownloadBtn" onclick="processAndDownload()" disabled>Download XML</button>
+
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const XLSX = window.require('xlsx');
+        const { ipcRenderer } = window.require('electron');
+        let excelDataObject = null; 
+        let originalFileNameBase = 'output_xml';
+        let sourceExcelFullPath = null; // To store the full path
+
+        function displayMessage(text, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type; 
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const processBtn = document.getElementById('processAndDownloadBtn');
+            
+            processBtn.disabled = true;
+            excelDataObject = null;
+            displayMessage('Please select a file...', 'info');
+            sourceExcelFullPath = null; // Reset path
+
+
+            if (file) {
+                originalFileNameBase = file.name.replace(/\.[^/.]+$/, "");
+                sourceExcelFullPath = file.path; // <-- Capture the full file path (Electron specific)
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    try {
+                        const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                        
+                        excelDataObject = jsonData.filter(row => {
+                            return Object.values(row).some(cellValue => 
+                                cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== ""
+                            );
+                        });
+
+                        if (excelDataObject.length > 0) {
+                            processBtn.disabled = false;
+                            displayMessage(`File loaded: ${file.name}. Click to convert and download.`, 'info');
+                        } else {
+                            displayMessage('Excel file is empty or data could not be read.', 'error');
+                            excelDataObject = null; 
+                        }
+                    } catch (err) {
+                        console.error("Error reading Excel file:", err);
+                        displayMessage('Error reading Excel file: ' + err.message, 'error');
+                        excelDataObject = null; 
+                    }
+                };
+                reader.onerror = function() {
+                    displayMessage('Error reading the file.', 'error');
+                    excelDataObject = null; 
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                 displayMessage('No file selected.', 'info');
+            }
+        }
+
+        function createXmlTextElement(doc, parent, tagName, textContent) {
+            const element = doc.createElement(tagName);
+            const textStr = (textContent !== null && textContent !== undefined) ? String(textContent) : "";
+            if (textStr.trim() !== "" || ["SpecificationCode", "Description", "SUP1", "SUP2", "SUP3", "OtherInformation", "FeeCode", "FeeName", "FeeReference", "FeeAmount", "Rule"].includes(tagName) ) {
+                 element.textContent = textStr; 
+            }
+            parent.appendChild(element);
+            return element;
+        }
+        
+        function formatDate(dateInput) {
+            if (!dateInput) return "";
+            try {
+                let dateObj;
+                if (dateInput instanceof Date) {
+                    dateObj = dateInput;
+                } else if (typeof dateInput === 'number') { 
+                     dateObj = new Date((dateInput - 25569) * 86400 * 1000);
+                     dateObj = new Date(dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000)); // Adjust for local timezone offset
+                } else if (typeof dateInput === 'string') {
+                    // If it's already in YYYY-MM-DD, just return
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) return dateInput;
+                    dateObj = new Date(dateInput);
+                } else {
+                    return String(dateInput); 
+                }
+
+                if (isNaN(dateObj.getTime())) return String(dateInput); 
+
+                const year = dateObj.getUTCFullYear(); // Use UTC to avoid timezone shifts during formatting
+                const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            } catch (e) {
+                console.warn("Date formatting error for:", dateInput, e);
+                return String(dateInput);
+            }
+        }
+
+        async function processAndDownload() {
+            if (!excelDataObject || excelDataObject.length === 0) {
+                displayMessage('No Excel data to convert. Please load a file first.', 'error');
+                return;
+            }
+
+            try {
+                const doc = document.implementation.createDocument(null, null, null);
+                const licenseEl = doc.createElement("License");
+                doc.appendChild(licenseEl);
+
+                let firstDataRow = excelDataObject.find(row => row["Ministry"] && String(row["Ministry"]).trim() !== "");
+                if (!firstDataRow) {
+                    firstDataRow = excelDataObject.length > 0 ? excelDataObject[0] : {}; 
+                }
+
+                const ministryCodeVal = firstDataRow["Ministry"] || "";
+                const consigneeCodeVal = firstDataRow["Consignee"] || "";
+                const validFromVal = formatDate(firstDataRow["ValidFrom"]);
+                const validToVal = formatDate(firstDataRow["ValidTo"]);
+                const documentCodeVal = firstDataRow["DocumentCode"] || "";
+
+                const ministryEl = createXmlTextElement(doc, licenseEl, "Ministry", null);
+                createXmlTextElement(doc, ministryEl, "Code", ministryCodeVal);
+                createXmlTextElement(doc, ministryEl, "Name", ministryCodeVal ? `M. Health - Code ${ministryCodeVal}` : "M. Health - Environmental Health Section");
+
+                const consigneeEl = createXmlTextElement(doc, licenseEl, "Consignee", null);
+                createXmlTextElement(doc, consigneeEl, "Code", consigneeCodeVal);
+                createXmlTextElement(doc, consigneeEl, "Name", consigneeCodeVal ? `Consignee Name for ${consigneeCodeVal}` : "AL FUTTAIM SONS CO. W.L.L");
+
+                createXmlTextElement(doc, licenseEl, "Reference", firstDataRow["Reference"] || "AUTO-REF-001");
+                createXmlTextElement(doc, licenseEl, "LicenseType", firstDataRow["LicenseType"] || "0");
+                createXmlTextElement(doc, licenseEl, "ValidFrom", validFromVal);
+                createXmlTextElement(doc, licenseEl, "ValidTo", validToVal);
+                createXmlTextElement(doc, licenseEl, "DocumentCode", documentCodeVal);
+
+                const commoditiesEl = createXmlTextElement(doc, licenseEl, "Commodities", null);
+
+                excelDataObject.forEach((row, rowIndex) => {
+                    const itemCodesStr = String(row["Code"] || "").trim();
+                    if (!itemCodesStr) return; 
+
+                    const individualCodes = itemCodesStr.split('\n').map(c => c.trim()).filter(c => c);
+
+                    individualCodes.forEach((singleCode, codeIndex) => {
+                        const itemEl = createXmlTextElement(doc, commoditiesEl, "Item", null);
+                        createXmlTextElement(doc, itemEl, "Radio_Flags", String(row["Radio_Flags"] || "8"));
+                        createXmlTextElement(doc, itemEl, "Code", singleCode);
+                        createXmlTextElement(doc, itemEl, "PR2", String(row["PR2"] || "000"));
+                        createXmlTextElement(doc, itemEl, "PR3", String(row["PR3"] || "0000"));
+                        createXmlTextElement(doc, itemEl, "PR4", String(row["PR4"] || "0000"));
+                        createXmlTextElement(doc, itemEl, "SpecificationCode", String(row["SpecificationCode"] || ""));
+                        createXmlTextElement(doc, itemEl, "Description", String(row["Description"] || ""));
+                        createXmlTextElement(doc, itemEl, "Maximum", String(row["Maximum"] || "99999999999999"));
+                        createXmlTextElement(doc, itemEl, "Currency", String(row["Currency"] || "BHD"));
+                        createXmlTextElement(doc, itemEl, "SUP1", String(row["SUP1"] || ""));
+                        createXmlTextElement(doc, itemEl, "SUP2", String(row["SUP2"] || ""));
+                        createXmlTextElement(doc, itemEl, "SUP3", String(row["SUP3"] || ""));
+                        createXmlTextElement(doc, itemEl, "OtherInformation", String(row["OtherInformation"] || ""));
+                        createXmlTextElement(doc, itemEl, "ItemCategory", String(row["ItemCategory"] || "0"));
+                        createXmlTextElement(doc, itemEl, "TypeQuantityReg", String(row["TypeQuantityReg"] || "0"));
+                        createXmlTextElement(doc, itemEl, "TypeQuantityUnReg", String(row["TypeQuantityUnReg"] || "0"));
+                        
+                        // AttachedDoc - Simplified: Add if it's the very first item being processed overall
+                        if (rowIndex === 0 && codeIndex === 0 && documentCodeVal) { 
+                            const attachedDoc1 = createXmlTextElement(doc, itemEl, "AttachedDoc", null);
+                            createXmlTextElement(doc, attachedDoc1, "Code", "003");
+                            createXmlTextElement(doc, attachedDoc1, "Name", "Invoice");
+                            createXmlTextElement(doc, attachedDoc1, "Reference", "INV/GMP/ISO");
+                            createXmlTextElement(doc, attachedDoc1, "Date", validToVal); 
+                            createXmlTextElement(doc, attachedDoc1, "Rule", "");
+
+                            const attachedDoc2 = createXmlTextElement(doc, itemEl, "AttachedDoc", null);
+                            createXmlTextElement(doc, attachedDoc2, "Code", documentCodeVal);
+                            createXmlTextElement(doc, attachedDoc2, "Name", `M. Health - Code ${documentCodeVal}`);
+                            createXmlTextElement(doc, attachedDoc2, "Reference", "DOC");
+                            createXmlTextElement(doc, attachedDoc2, "Date", validFromVal);
+                            createXmlTextElement(doc, attachedDoc2, "Rule", "");
+                        }
+                    });
+                });
+
+                for (let i = 0; i < 5; i++) {
+                    const feesEl = createXmlTextElement(doc, licenseEl, "Fees", null);
+                    createXmlTextElement(doc, feesEl, "FeeCode", "");
+                    createXmlTextElement(doc, feesEl, "FeeName", "");
+                    createXmlTextElement(doc, feesEl, "FeeReference", "");
+                    createXmlTextElement(doc, feesEl, "FeeAmount", "");
+                    createXmlTextElement(doc, feesEl, "FeeMandatory", "false");
+                }
+
+                const serializer = new XMLSerializer();
+                let xmlString = serializer.serializeToString(doc.documentElement);
+                
+                // Add the XML declaration with standalone="no" manually and format slightly for readability
+                // Basic formatting: ensure newlines after closing tags and before opening tags if they are on different lines.
+                xmlString = xmlString.replace(/></g, '>\n<'); 
+                // This is a very naive formatter. For complex XML, it might not be perfect.
+                // A more robust pretty printer in JS is non-trivial.
+                
+                const finalXmlString = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + xmlString;
+                                     
+                await downloadXmlFile(finalXmlString, `${originalFileNameBase}_converted.xml`);
+                displayMessage('XML conversion and download completed successfully!', 'success');
+
+            } catch (error) {
+                console.error("Error during XML conversion:", error);
+                displayMessage('Error during XML conversion: ' + error.message, 'error');
+            }
+        }
+        
+        async function downloadXmlFile(xmlString, fileName) {
+            const path = window.require('path');
+            let defaultSavePath = fileName;
+            if (sourceExcelFullPath) {
+                const dir = path.dirname(sourceExcelFullPath);
+                defaultSavePath = path.join(dir, fileName);
+            }
+
+            const savePath = await ipcRenderer.invoke('dialog:showSaveDialog', {
+                title: 'Save Converted XML File',
+                defaultPath: defaultSavePath,
+                filters: [
+                    { name: 'XML Files', extensions: ['xml'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (savePath) {
+                const fs = window.require('fs');
+                fs.writeFile(savePath, xmlString, { encoding: 'utf-8' }, (err) => {
+                    if (err) {
+                        console.error('Failed to save file:', err);
+                        displayMessage(`Error saving file: ${err.message}`, 'error');
+                    } else {
+                        console.log('File saved to:', savePath);
+                        displayMessage(`File "${path.basename(savePath)}" saved successfully!`, 'success');
+                    }
+                });
+            } else {
+                displayMessage('Save operation was cancelled.', 'info');
+            }
+        }
+
+    </script>
+</body>
+</html>

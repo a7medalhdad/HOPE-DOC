@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPE</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        /* Draggable Region */
+        .drag-region {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            width: 100%;
+            -webkit-app-region: drag;
+            z-index: 9999;
+        }
+
+        /* Basic app styling */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        
+        :root {
+            --bg-color: #1a1b26; 
+            --surface-color: #24283b; 
+            --primary-color: #7aa2f7; 
+            --secondary-color: #ff6d92; 
+            --accent-color: #e0af68; /* Swapped with warning for better visibility */
+            --text-color: #c0caf5; 
+            --text-secondary-color: #a9b1d6; 
+            --border-color: #3b4261;
+            --success-color: #9ece6a; 
+            --error-color: #f7768e; 
+            --card-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            --transition-speed: 0.3s;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            direction: ltr;
+            margin: 0;
+        }
+
+        body {
+            padding-top: 30px; /* Space for drag region */
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        header h1 {
+            font-size: clamp(1.4rem, 4vw, 1.7rem);
+            margin: 0;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+        
+        #edit-tools-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            transition: all var(--transition-speed) ease;
+        }
+        #edit-tools-btn svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--text-secondary-color);
+            transition: all var(--transition-speed) ease;
+        }
+        #edit-tools-btn:hover {
+            background-color: var(--surface-color);
+        }
+        #edit-tools-btn:hover svg {
+            stroke: var(--primary-color);
+        }
+
+        .edit-mode #edit-tools-btn {
+            background-color: var(--success-color);
+        }
+        .edit-mode #edit-tools-btn svg {
+            stroke: var(--bg-color);
+        }
+        
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 200px));
+            grid-auto-rows: minmax(150px, auto);
+            gap: 25px;
+            padding: 25px;
+            overflow-y: auto;
+            scrollbar-gutter: stable;
+            justify-content: center;
+            align-content: start;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Responsive breakpoints for better control */
+        @media (max-width: 320px) {
+            main {
+                grid-template-columns: 1fr;
+                padding: 8px;
+                gap: 8px;
+            }
+            .tool-card {
+                padding: 8px !important;
+                min-height: 100px !important;
+                border-radius: 12px;
+            }
+            .tool-link img {
+                width: 32px !important;
+                height: 32px !important;
+                margin-bottom: 5px !important;
+            }
+            .tool-link h3 {
+                font-size: 0.8rem !important;
+                margin: 2px 0 !important;
+                line-height: 1.2 !important;
+            }
+            .tool-link p {
+                font-size: 0.65rem !important;
+                line-height: 1.1 !important;
+                margin: 2px 0 0 !important;
+            }
+        }
+        
+        @media (min-width: 321px) and (max-width: 480px) {
+            main {
+                grid-template-columns: 1fr;
+                padding: 10px;
+                gap: 10px;
+            }
+            .tool-card {
+                padding: 12px !important;
+                min-height: 120px !important;
+                border-radius: 14px;
+            }
+            .tool-link img {
+                width: 40px !important;
+                height: 40px !important;
+                margin-bottom: 8px !important;
+            }
+            .tool-link h3 {
+                font-size: 0.9rem !important;
+                margin: 3px 0 !important;
+            }
+            .tool-link p {
+                font-size: 0.7rem !important;
+                margin: 3px 0 0 !important;
+            }
+        }
+        
+        @media (min-width: 481px) and (max-width: 640px) {
+            main {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 12px;
+                gap: 12px;
+            }
+            .tool-card {
+                padding: 14px !important;
+                min-height: 140px !important;
+            }
+            .tool-link img {
+                width: 45px !important;
+                height: 45px !important;
+                margin-bottom: 10px !important;
+            }
+            .tool-link h3 {
+                font-size: 0.95rem !important;
+                margin: 4px 0 !important;
+            }
+            .tool-link p {
+                font-size: 0.75rem !important;
+                margin: 4px 0 0 !important;
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 1024px) {
+            main {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 700px;
+            }
+        }
+        
+        @media (min-width: 1025px) and (max-width: 1400px) {
+            main {
+                grid-template-columns: repeat(3, 1fr);
+                max-width: 1050px;
+            }
+        }
+        
+        @media (min-width: 1401px) {
+            main {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        footer {
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            font-size: clamp(0.8rem, 2vmin, 0.9rem);
+            color: var(--text-secondary-color);
+            flex-shrink: 0;
+        }
+        
+        #footer-icon {
+            width: clamp(30px, 5vmin, 35px);
+            height: clamp(30px, 5vmin, 35px);
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+        
+        .tool-card {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            box-shadow: var(--card-shadow);
+            border: 1px solid transparent;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            min-height: 150px;
+            max-height: 200px;
+            will-change: transform, box-shadow;
+        }
+        
+        .edit-mode .tool-card {
+            cursor: move;
+        }
+        
+        .tool-card:hover:not(.edit-mode) {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+            border-color: var(--primary-color);
+        }
+
+        .tool-card.is-hidden {
+            opacity: 0.6;
+            background: #2a2f41;
+        }
+        
+        .tool-link {
+            text-align: center;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: inherit;
+            text-decoration: none;
+            flex-grow: 1;
+        }
+        
+        .tool-link img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            object-fit: contain;
+            transition: transform var(--transition-speed) ease;
+        }
+        
+        .tool-card:hover:not(.edit-mode) .tool-link img {
+            transform: scale(1.08);
+        }
+        
+        .tool-link h3 {
+            margin: 5px 0;
+            color: var(--primary-color);
+            font-weight: 500;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+        
+        .tool-link p {
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary-color);
+            line-height: 1.4;
+            max-width: 100%;
+        }
+
+        /* Edit Controls on Card */
+        .tool-card .edit-controls {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: none;
+            z-index: 10;
+        }
+
+        .edit-mode .tool-card .edit-controls {
+            display: flex;
+        }
+
+        .tool-card .edit-controls button {
+            background-color: var(--bg-color);
+            color: white;
+            border: 1px solid var(--border-color);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 28px;
+            text-align: center;
+            transition: all 0.2s ease;
+            font-family: monospace;
+        }
+        .tool-card .edit-controls button:hover {
+            transform: scale(1.1);
+        }
+
+        .hide-btn { background-color: rgba(255, 109, 146, 0.8) !important; }
+        .hide-btn:hover { background-color: #ff6d92 !important; }
+
+        .unhide-btn { background-color: rgba(158, 206, 106, 0.8) !important; }
+        .unhide-btn:hover { background-color: #9ece6a !important; }
+
+        /* SortableJS helper classes */
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: var(--primary-color);
+        }
+        .sortable-chosen {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <div class="drag-region"></div>
+    <div class="container">
+        <header>
+            <h1>HOPE</h1>
+            <button id="edit-tools-btn" title="Manage Tools">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+        </header>
+        <main id="tools-grid">
+            <!-- Tool buttons embedded directly in HTML -->
+            <div class="tool-card" data-tool-id="moh">
+                <div class="edit-controls">
+                    <button class="hide-btn" title="Hide Tool">&minus;</button>
+                    <button class="unhide-btn" title="Show Tool">&#43;</button>
+                </div>
+                <div class="tool-link" data-file="MOH_tools_2.html">
+                    <img src="assets/icons/moh_tool_icon.png" alt="PDF&ZIP" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+UDwvdGV4dD48L2c+PC9zdmc+'; this.style.padding='5px';">
+                    <h3>MOH TOOLS</h3>
+                    <p>Extract, split and manage files</p>
+                </div>
+            </div>
+            
+            <div class="tool-card" data-tool-id="ofoq">
+                <div class="edit-controls">
+                    <button class="hide-btn" title="Hide Tool">&minus;</button>
+                    <button class="unhide-btn" title="Show Tool">&#43;</button>
+                </div>
+                <div class="tool-link" data-file="OFOQ_1_2.html">
+                    <img src="assets/icons/ofoq_system_icon.png" alt="EX2XML" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+RTwvdGV4dD48L2c+PC9zdmc+'; this.style.padding='5px';">
+                    <h3>OFOQ</h3>
+                    <p>Convert Excel files to OFOQ system</p>
+                </div>
+            </div>
+            
+            <div class="tool-card" data-tool-id="extractor">
+                <div class="edit-controls">
+                    <button class="hide-btn" title="Hide Tool">&minus;</button>
+                    <button class="unhide-btn" title="Show Tool">&#43;</button>
+                </div>
+                <div class="tool-link" data-file="Smart_PDF_Data_Extractor_2.html">
+                    <img src="assets/icons/pdf_extractor_icon.png" alt="PDF2EX" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+UDwvdGV4dD48L2c+PC9zdmc+'; this.style.padding='5px';">
+                    <h3>Table extractor</h3>
+                    <p>Extract data from PDF files</p>
+                </div>
+            </div>
+            
+            <div class="tool-card" data-tool-id="upload">
+                <div class="edit-controls">
+                    <button class="hide-btn" title="Hide Tool">&minus;</button>
+                    <button class="unhide-btn" title="Show Tool">&#43;</button>
+                </div>
+                <div class="tool-link" data-file="UPLOAD_REQUESTED.html">
+                    <img src="assets/icons/upload_icon.png" alt="UPLOAD REQUESTED" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VTwvdGV4dD48L2c+PC9zdmc+'; this.style.padding='5px';">
+                    <h3>UPLOAD REQUESTED</h3>
+                    <p>Convert Excel files to OFOQ system for permits only</p>
+                </div>
+            </div>
+            
+            <div class="tool-card" data-tool-id="zara">
+                <div class="edit-controls">
+                    <button class="hide-btn" title="Hide Tool">&minus;</button>
+                    <button class="unhide-btn" title="Show Tool">&#43;</button>
+                </div>
+                <div class="tool-link" data-file="ZARA_SHIPMENT.html">
+                    <img src="assets/icons/zara_icon.png" alt="ZARA SHIPMENT" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+WjwvdGV4dD48L2c+PC9zdmc+'; this.style.padding='5px';">
+                    <h3>ZARA SHIPMENT</h3>
+                    <p>Special tool for ZARA shipments</p>
+                </div>
+            </div>
+            
+            <div class="tool-card" data-tool-id="ai">
+                <div class="edit-controls">
+                    <button class="hide-btn" title="Hide Tool">&minus;</button>
+                    <button class="unhide-btn" title="Show Tool">&#43;</button>
+                </div>
+                <div class="tool-link" data-file="AI.html">
+                    <img src="assets/icons/AI.png.png" alt="AI Tool" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+QUk8L3RleHQ+PC9nPjwvc3ZnPg=='; this.style.padding='5px';">
+                    <h3>AI Tool</h3>
+                    <p>Process Excel files with AI</p>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <img src="assets/icons/footer_icon.png" alt="App Icon" id="footer-icon">
+            <p>a7medlhddad@gmail.com</p>
+        </footer>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toolsGrid = document.getElementById('tools-grid');
+            const editBtn = document.getElementById('edit-tools-btn');
+            const container = document.querySelector('.container');
+            let sortable = null;
+
+            const toolOrderKey = 'hopeToolsOrder_v3';
+            const hiddenToolsKey = 'hopeHiddenTools_v3';
+
+            // --- Persistence Functions ---
+            const saveToolOrder = () => {
+                const order = [...toolsGrid.children].map(card => card.dataset.toolId);
+                localStorage.setItem(toolOrderKey, JSON.stringify(order));
+            };
+
+            const loadToolOrder = () => {
+                const order = JSON.parse(localStorage.getItem(toolOrderKey));
+                if (order) {
+                    order.forEach(toolId => {
+                        const card = toolsGrid.querySelector(`.tool-card[data-tool-id="${toolId}"]`);
+                        if (card) toolsGrid.appendChild(card);
+                    });
+                }
+            };
+
+            const getHiddenTools = () => JSON.parse(localStorage.getItem(hiddenToolsKey)) || [];
+            const saveHiddenTools = (hidden) => localStorage.setItem(hiddenToolsKey, JSON.stringify(hidden));
+
+            // --- UI Update Functions ---
+            const updateCardVisibility = () => {
+                const hiddenTools = getHiddenTools();
+                document.querySelectorAll('.tool-card').forEach(card => {
+                    const toolId = card.dataset.toolId;
+                    const isHidden = hiddenTools.includes(toolId);
+                    
+                    card.classList.toggle('is-hidden', isHidden);
+
+                    // Update button visibility inside card
+                    card.querySelector('.hide-btn').style.display = isHidden ? 'none' : 'block';
+                    card.querySelector('.unhide-btn').style.display = isHidden ? 'block' : 'none';
+                });
+            };
+            
+            // --- Edit Mode ---
+            const toggleEditMode = (enable) => {
+                document.body.classList.toggle('edit-mode', enable);
+                sortable.option('disabled', !enable);
+
+                if (enable) {
+                    // Entering edit mode: show all cards and update their controls
+                    document.querySelectorAll('.tool-card').forEach(c => c.style.display = 'flex');
+                    updateCardVisibility();
+                } else {
+                    // Exiting edit mode: hide the cards that are supposed to be hidden
+                    const hiddenTools = getHiddenTools();
+                    document.querySelectorAll('.tool-card').forEach(card => {
+                        if (hiddenTools.includes(card.dataset.toolId)) {
+                            card.style.display = 'none';
+                        }
+                    });
+                }
+            };
+
+            // --- Initialization ---
+            const init = () => {
+                // Load saved state first
+                loadToolOrder();
+                const hiddenTools = getHiddenTools();
+                document.querySelectorAll('.tool-card').forEach(card => {
+                     if (hiddenTools.includes(card.dataset.toolId)) {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Init SortableJS
+                sortable = new Sortable(toolsGrid, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    disabled: true,
+                    onEnd: saveToolOrder,
+                });
+
+                // --- Event Listeners ---
+                // Open tool link
+                toolsGrid.querySelectorAll('.tool-link').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        if (document.body.classList.contains('edit-mode')) {
+                            e.preventDefault();
+                            return;
+                        }
+                        const file = this.getAttribute('data-file');
+                        if (window.require) {
+                            window.require('electron').ipcRenderer.send('open-tool', file);
+                        }
+                    });
+                });
+
+                // Hide button
+                toolsGrid.querySelectorAll('.hide-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const card = this.closest('.tool-card');
+                        const toolId = card.dataset.toolId;
+                        let hidden = getHiddenTools();
+                        if (!hidden.includes(toolId)) {
+                            hidden.push(toolId);
+                            saveHiddenTools(hidden);
+                            updateCardVisibility();
+                        }
+                    });
+                });
+                
+                // Unhide button
+                toolsGrid.querySelectorAll('.unhide-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const card = this.closest('.tool-card');
+                        const toolId = card.dataset.toolId;
+                        let hidden = getHiddenTools();
+                        const index = hidden.indexOf(toolId);
+                        if (index > -1) {
+                            hidden.splice(index, 1);
+                            saveHiddenTools(hidden);
+                            updateCardVisibility();
+                        }
+                    });
+                });
+
+                // Main Edit button
+                editBtn.addEventListener('click', () => {
+                    const isEditing = document.body.classList.contains('edit-mode');
+                    toggleEditMode(!isEditing);
+                });
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html> 

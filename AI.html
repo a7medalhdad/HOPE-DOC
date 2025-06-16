@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Extractor AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Draggable Region */
+        .drag-region {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            -webkit-app-region: drag;
+            z-index: 99999;
+        }
+
+        :root {
+            --bg-color: #1a1b26;
+            --surface-color: #24283b;
+            --primary-color: #7aa2f7;
+            --secondary-color: #bb9af7;
+            --accent-color: #ff9e64;
+            --text-color: #c0caf5;
+            --text-secondary-color: #a9b1d6;
+            --border-color: #3b4261;
+            --success-color: #9ece6a;
+            --error-color: #f7768e;
+            --warning-color: #e0af68;
+            --processing-color: var(--primary-color);
+            --font-primary: 'Roboto', 'Segoe UI', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e2f; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background-color: #5e5eff; border-radius: 10px; border: 2px solid #1e1e2f; }
+
+        body {
+            font-family: var(--font-primary);
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 30px 25px 25px; /* Adjusted top padding */
+            box-sizing: border-box;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .container {
+            background-color: var(--surface-color);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            width: 100%;
+            max-width: 850px;
+            margin: auto;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 0;
+            font-size: 2em;
+            font-weight: 500;
+            flex-grow: 1;
+        }
+        
+        .header-buttons button {
+            background-color: var(--secondary-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+        .header-buttons button:hover { background-color: #a885e3; }
+        .header-buttons button:active { transform: translateY(1px); }
+        .header-buttons button .icon { width: 18px; height: 18px; fill: currentColor;}
+
+        .description {
+            font-size: 0.95em;
+            color: var(--text-secondary-color);
+            margin-bottom: 25px;
+            text-align: center;
+            background-color: rgba(var(--primary-color), 0.1);
+            border: 1px solid rgba(var(--primary-color), 0.3);
+            padding: 18px;
+            border-radius: 10px;
+            line-height: 1.5;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 500;
+            color: var(--text-secondary-color);
+            font-size: 1.05em;
+        }
+
+        input[type="file"], input[type="number"], select {
+            width: 100%; box-sizing: border-box; 
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color); color: var(--text-color); border-radius: 8px;
+            transition: border-color 0.3s; 
+            font-size: 1em;
+            height: 50px;
+        }
+        
+        input[type="file"] { padding: 0; margin-bottom: 15px; display: flex; align-items: center; }
+        input[type="number"], select { padding: 0 12px; }
+        select { margin-bottom: 20px; } /* Added for modal spacing */
+
+        input[type="file"]:focus-within, input[type="number"]:focus, select:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.3);
+        }
+        input[type="file"]::file-selector-button {
+            background-color: var(--primary-color); color: var(--bg-color); border: none;
+            padding: 0 20px; height: 100%; border-top-left-radius: 7px;
+            border-bottom-left-radius: 7px; margin-right: 15px; cursor: pointer;
+            font-weight: 500; transition: background-color 0.2s ease-in-out;
+        }
+        input[type="file"]::file-selector-button:hover { background-color: #6a8ef0; }
+        input[type="file"]::after {
+            content: attr(data-file-name); padding: 0 15px;
+            color: var(--text-secondary-color); font-size: 0.9em;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        
+        .page-range-inputs {
+            display: flex; gap: 15px; margin-bottom: 25px;
+        }
+        .page-range-inputs > div { flex: 1; }
+        .page-range-inputs label { margin-bottom: 8px; }
+        
+        .main-action-button {
+            color: #fff; padding: 16px 0; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 1.1em; font-weight: 500;
+            transition: all 0.3s ease; display: flex; align-items: center;
+            justify-content: center; gap: 10px; width: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            margin-bottom: 25px;
+        }
+        .main-action-button:hover {
+            opacity: 0.9; box-shadow: 0 5px 15px rgba(var(--primary-color), 0.2);
+        }
+        .main-action-button:active { transform: translateY(1px) scale(0.99); }
+        .main-action-button:disabled {
+            background: var(--border-color) !important; color: var(--text-secondary-color);
+            cursor: not-allowed; box-shadow: none; opacity: 0.7;
+        }
+        .main-action-button .icon { width: 20px; height: 20px; fill: currentColor; }
+
+        .status-container {
+            margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 500;
+            text-align: center; display: flex; align-items: center; justify-content: center;
+            min-height: 45px; transition: all 0.3s ease;
+            word-break: break-word;
+        }
+        .status-container.status-processing { background-color: rgba(var(--processing-color), 0.15); border: 1px solid var(--processing-color); color: var(--processing-color); }
+        .status-container.status-success { background-color: rgba(var(--success-color), 0.15); border: 1px solid var(--success-color); color: var(--success-color); }
+        .status-container.status-error { background-color: rgba(var(--error-color), 0.15); border: 1px solid var(--error-color); color: var(--error-color); }
+        .status-container.status-warning { background-color: rgba(var(--warning-color), 0.15); border: 1px solid var(--warning-color); color: var(--warning-color); }
+        .status-container.status-info { background-color: rgba(var(--primary-color), 0.15); border: 1px solid var(--primary-color); color: var(--primary-color); }
+
+        .loader {
+            border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color);
+            border-radius: 50%; width: 22px; height: 22px;
+            animation: spin 0.8s linear infinite; display: none; margin-right: 12px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .results-area {
+            margin-top: 35px;
+        }
+        
+        .result-actions {
+            margin-bottom: 25px; display: flex; gap: 18px;
+            justify-content: flex-start;
+        }
+        .result-actions button {
+            color: var(--bg-color); font-size: 0.95em; font-weight: 500; padding: 12px 22px;
+            border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .result-actions button:hover { opacity: 0.85; transform: translateY(-1px); }
+        .result-actions button:disabled {
+            background-color: var(--border-color) !important;
+            color: var(--text-secondary-color) !important; cursor: not-allowed;
+            opacity: 0.6; transform: none;
+        }
+        .result-actions button.excel-btn { background-color: var(--success-color); }
+        .result-actions button .icon { width: 18px; height: 18px; fill: currentColor; }
+
+        .results-section {
+             border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 25px; background-color: rgba(var(--bg-color), 0.5);
+            margin-bottom: 20px;
+        }
+        .results-section h2 {
+            color: var(--primary-color); margin-top: 0; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
+            font-size: 1.4em; font-weight: 500;
+        }
+        .results-section p {
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+        .results-section strong {
+            color: var(--text-secondary-color);
+            min-width: 130px;
+            display: inline-block;
+        }
+        .results-section pre {
+            white-space: pre-wrap; word-wrap: break-word;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            background-color: rgba(var(--bg-color), 0.7); padding: 18px; border-radius: 8px;
+            border: 1px solid var(--border-color); max-height: 450px; overflow-y: auto;
+            color: var(--text-color); font-size: 0.9em; line-height: 1.6; text-align: left;
+            color: var(--accent-color);
+            margin: 0;
+        }
+
+        .final-review-note {
+            margin-top: 20px;
+            padding: 12px;
+            font-size: 0.9em;
+            color: var(--warning-color);
+            background-color: rgba(var(--warning-color), 0.1);
+            border: 1px solid rgba(var(--warning-color), 0.3);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .icon { display: inline-block; vertical-align: middle; }
+
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: var(--surface-color); padding: 30px;
+            border: 1px solid var(--border-color); width: 90%; max-width: 500px;
+            border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            color: var(--text-color);
+        }
+        .modal-content h2 { color: var(--primary-color); margin-top: 0; margin-bottom: 20px; }
+        .modal-content label { margin-bottom: 8px; font-weight: 500; color: var(--text-secondary-color); }
+        .modal-content input[type="text"], .modal-content input[type="password"] {
+            width: calc(100% - 24px); padding: 12px;
+            border: 1px solid var(--border-color); background-color: var(--bg-color);
+            color: var(--text-color); border-radius: 6px; font-size: 1em;
+            direction: ltr; text-align: left;
+            height: 50px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        .modal-content input[type="text"]:focus, .modal-content input[type="password"]:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.3);
+        }
+        .modal-buttons { text-align: left; margin-top: 10px; }
+        .modal-buttons button {
+            padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer;
+            font-weight: 500; margin-right: 10px; transition: background-color 0.2s ease;
+        }
+        .modal-buttons button.save-btn { background-color: var(--primary-color); color: var(--bg-color); }
+        .modal-buttons button.save-btn:hover { background-color: #6a8ef0; }
+        .modal-buttons button.cancel-btn { background-color: var(--border-color); color: var(--text-secondary-color); }
+        .modal-buttons button.cancel-btn:hover { background-color: #4b5372; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        // --- Enhanced Library Loading Check ---
+        function checkLibraries() {
+            const missing = [];
+            if (typeof pdfjsLib === 'undefined') {
+                missing.push('pdf.js');
+            }
+            if (typeof XLSX === 'undefined') {
+                missing.push('xlsx.js');
+            }
+
+            if (missing.length > 0) {
+                const errorMsg = `Error: Could not load essential libraries (${missing.join(', ')}). Please check your internet connection and try again. The tool cannot function without them.`;
+                const container = document.querySelector('.container');
+                if (container) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.textContent = errorMsg;
+                    errorDiv.style.color = 'var(--error-color)';
+                    errorDiv.style.backgroundColor = 'rgba(247, 118, 142, 0.1)';
+                    errorDiv.style.border = '1px solid var(--error-color)';
+                    errorDiv.style.padding = '20px';
+                    errorDiv.style.borderRadius = '10px';
+                    errorDiv.style.textAlign = 'center';
+                    errorDiv.style.fontWeight = '500';
+                    container.innerHTML = ''; // Clear the container
+                    container.appendChild(errorDiv);
+                }
+                // Disable all controls if libraries are missing
+                const allButtons = document.querySelectorAll('button, input');
+                allButtons.forEach(el => el.disabled = true);
+                return false;
+            }
+            // If libraries are loaded, set worker
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+            return true;
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+</head>
+<body dir="ltr">
+    <div class="drag-region"></div>
+    <div class="container">
+        <div class="header-controls">
+            <h1 id="pageTitle">Data Extractor</h1>
+            <div class="header-buttons">
+                <button id="settingsButton">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.69-1.62-0.92L14.4,2.23C14.38,2,14.17,1.84,13.92,1.84 h-3.84c-0.25,0-0.46,0.16-0.49,0.39L9.2,4.59C8.6,4.82,8.08,5.13,7.58,5.51L5.19,4.55C4.97,4.46,4.72,4.53,4.6,4.75L2.68,8.07 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.78,10.7,4.76,11,4.76,11.3c0,0.3,0.02,0.6,0.06,0.9l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.69,1.62,0.92l0.39,2.36 c0.02,0.23,0.23,0.39,0.49,0.39h3.84c0.25,0,0.46-0.16,0.49-0.39l0.39-2.36c0.6-0.23,1.12-0.54,1.62-0.92l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32C21.94,13.82,21.89,13.55,21.71,13.41L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <p class="description">Upload up to 5 PDF or image files. The system will extract and analyze data (HS Code, Country of Origin, Description, Quantity, Amount).</p>
+
+        <label for="fileInput">Choose File(s) (PDF or Image):</label>
+        <input type="file" id="fileInput" multiple accept=".pdf, image/*" data-file-name="No file chosen">
+
+        <div id="pageRangeContainer" class="page-range-inputs" style="display:none;">
+            <div>
+                <label for="startPageInput">Start Page:</label>
+                <input type="number" id="startPageInput" value="1" min="1">
+            </div>
+            <div>
+                <label for="endPageInput">End Page:</label>
+                <input type="number" id="endPageInput" value="1" min="1">
+            </div>
+        </div>
+
+        <button id="extractButton" class="main-action-button">
+            <svg class="icon" id="buttonIcon" viewBox="0 0 24 24"><path fill="currentColor" d="M9,16V10H5L12,3L19,10H15V16H9M5,20V18H19V20H5Z" /></svg>
+            <span id="extractButtonText">Extract Data</span>
+        </button>
+
+        <div id="statusContainer" class="status-container" style="display:none;">
+            <div class="loader" id="loader"></div>
+            <span id="statusText"></span>
+        </div>
+
+        <div id="resultsArea" class="results-area" style="display:none;">
+            <div class="result-actions">
+                <button id="downloadExcelButton" class="excel-btn" disabled>
+                    <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M21.17 3.25Q21.5 3.25 21.76 3.5 22 3.74 22 4.08V19.92Q22 20.26 21.76 20.5 21.5 20.75 21.17 20.75H7.83Q7.5 20.75 7.24 20.5 7 20.26 7 19.92V17H2V7H7V4.08Q7 3.74 7.24 3.5 7.5 3.25 7.83 3.25M7 15.5V8.5H4V15.5M12.5 14H15.25V15.5H11V8.5H15.25V10H12.5V11.5H15.25V12.5H12.5M20.25 19V5H8.75V7H16.75V17H8.75V19Z" /></svg>
+                    <span>Download Extracted Data as Excel</span>
+                </button>
+            </div>
+            
+            <div id="finalReviewNoteDiv" class="final-review-note" style="display:none;">
+                <strong>تنبيه:</strong> الرجاء التحقق من البيانات المستخرجة والتأكد من صحتها.
+            </div>
+
+            <div class="results-section" id="invoiceSummarySection">
+                <h2>Invoice Summary:</h2>
+                <div id="invoiceSummaryDiv">
+                    <p><strong>Invoice Number:</strong> <span id="invNum"></span></p>
+                    <p><strong>Invoice Date:</strong> <span id="invDate"></span></p>
+                    <p><strong>Total Amount:</strong> <span id="invTotal"></span> <span id="invCurrency"></span></p>
+                    <p><strong>Total Packages:</strong> <span id="invPackages"></span></p>
+                </div>
+            </div>
+
+            <div class="results-section" id="reviewNeededSection">
+                <h2>Data Needs Review:</h2>
+                <pre id="reviewNeededDiv"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="apiKeyModal" class="modal">
+        <div class="modal-content">
+            <h2>API Settings</h2>
+            <label for="apiKeyInput">Enter your Gemini API Key:</label>
+            <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+
+            <label for="modelSelect">Select AI Model:</label>
+            <select id="modelSelect">
+                <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Recommended)</option>
+                <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+            </select>
+            
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelApiKeyBtn">Cancel</button>
+                <button class="save-btn" id="saveApiKeyBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for libraries first thing.
+            if (!checkLibraries()) {
+                return; // Stop execution if libraries are not loaded
+            }
+
+            // --- Element Selectors ---
+            const fileInput = document.getElementById('fileInput');
+            const pageRangeContainer = document.getElementById('pageRangeContainer');
+            const startPageInput = document.getElementById('startPageInput');
+            const endPageInput = document.getElementById('endPageInput');
+            const extractButton = document.getElementById('extractButton');
+            const statusContainer = document.getElementById('statusContainer');
+            const loader = document.getElementById('loader');
+            const statusText = document.getElementById('statusText');
+            const resultsArea = document.getElementById('resultsArea');
+            const downloadExcelButton = document.getElementById('downloadExcelButton');
+            const finalReviewNoteDiv = document.getElementById('finalReviewNoteDiv');
+            const invoiceSummarySection = document.getElementById('invoiceSummarySection');
+            const reviewNeededSection = document.getElementById('reviewNeededSection');
+            const settingsButton = document.getElementById('settingsButton');
+            const apiKeyModal = document.getElementById('apiKeyModal');
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const modelSelect = document.getElementById('modelSelect'); // New
+            const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+            const cancelApiKeyBtn = document.getElementById('cancelApiKeyBtn');
+
+            // --- State and Config ---
+            let GEMINI_API_KEY = localStorage.getItem('geminiApiKey') || '';
+            let MODEL_NAME = localStorage.getItem('geminiModel') || 'gemini-1.5-flash-latest'; // Now dynamic
+            let currentSourcePath = null;
+            let extractedItemDetails = null;
+            const GEMINI_API_URL_PREFIX = `https://generativelanguage.googleapis.com/v1beta/models/`; // Changed
+            const MAX_FILES = 5;
+            const MAX_SINGLE_FILE_SIZE_MB = 10;
+            
+            // --- Initialization ---
+            apiKeyInput.value = GEMINI_API_KEY;
+            modelSelect.value = MODEL_NAME;
+
+
+            // --- Event Listeners ---
+            fileInput.addEventListener('change', async function() {
+                const files = this.files;
+                let fileNameDisplay = 'No file chosen';
+                if (files.length > 0) {
+                    fileNameDisplay = files.length === 1 ? files[0].name : `${files.length} files chosen`;
+                    currentSourcePath = files[0].path;
+                } else {
+                    currentSourcePath = null;
+                }
+                this.setAttribute('data-file-name', fileNameDisplay);
+
+                if (files.length === 1 && files[0].type === 'application/pdf') {
+                    pageRangeContainer.style.display = 'flex';
+                    try {
+                        const pdfDoc = await pdfjsLib.getDocument({ data: await files[0].arrayBuffer() }).promise;
+                        const totalPages = pdfDoc.numPages;
+                        startPageInput.value = 1;
+                        endPageInput.value = totalPages;
+                        startPageInput.max = totalPages;
+                        endPageInput.max = totalPages;
+                        updateStatus(`PDF has ${totalPages} pages. Please specify page range.`, 'info');
+                    } catch (error) {
+                        console.error('Error loading PDF for page count:', error);
+                        updateStatus('Error loading PDF to get page count.', 'error');
+                        pageRangeContainer.style.display = 'none';
+                    }
+                } else {
+                    pageRangeContainer.style.display = 'none';
+                }
+            });
+            
+            settingsButton.addEventListener('click', () => {
+                apiKeyInput.value = GEMINI_API_KEY;
+                modelSelect.value = MODEL_NAME;
+                apiKeyModal.style.display = 'flex';
+            });
+            cancelApiKeyBtn.addEventListener('click', () => apiKeyModal.style.display = 'none');
+            
+            saveApiKeyBtn.addEventListener('click', () => {
+                const newKey = apiKeyInput.value.trim();
+                const newModel = modelSelect.value;
+                if (newKey) {
+                    GEMINI_API_KEY = newKey;
+                    MODEL_NAME = newModel;
+                    localStorage.setItem('geminiApiKey', newKey);
+                    localStorage.setItem('geminiModel', newModel);
+                    apiKeyModal.style.display = 'none';
+                    updateStatus('Settings saved successfully.', 'success');
+                } else {
+                    updateStatus('Please enter a valid API Key.', 'error');
+                }
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == apiKeyModal) apiKeyModal.style.display = 'none';
+            });
+
+            extractButton.addEventListener('click', async () => {
+                // --- Reset UI and State ---
+                resetUI();
+                if (!validateInputs()) return;
+
+                setProcessingState(true, 'Analyzing file(s)...');
+                try {
+                    const allInputParts = await prepareFileContent();
+                    if (allInputParts.length === 0) {
+                        throw new Error('No content prepared for Gemini. Selected files might be empty or corrupt.');
+                    }
+                    
+                    setProcessingState(true, 'The magic works..');
+                    const extractedData = await callGeminiApi(allInputParts);
+                    handleGeminiResponse(extractedData);
+
+                } catch (err) {
+                    console.error('Error during processing:', err);
+                    updateStatus(`An error occurred: ${err.message}`, 'error');
+                } finally {
+                    setProcessingState(false);
+                }
+            });
+
+            downloadExcelButton.addEventListener('click', () => {
+                if (extractedItemDetails && Array.isArray(extractedItemDetails)) {
+                     const files = fileInput.files;
+                     let excelFileName = files.length === 1 ? files[0].name.replace(/\.(pdf|jpe?g|png)$/i, '') : 'combined_extracted_data';
+                     generateAndDownloadExcel(extractedItemDetails, excelFileName + '_extracted_data.xlsx');
+                } else {
+                    updateStatus('No data available to download.', 'warning');
+                }
+            });
+
+
+            // --- Core Functions ---
+            
+            function validateInputs() {
+                if (!GEMINI_API_KEY) {
+                    updateStatus('Please set your Gemini API Key in Settings.', 'error');
+                    apiKeyModal.style.display = 'flex';
+                    return false;
+                }
+                const files = fileInput.files;
+                if (files.length === 0) {
+                    updateStatus('Please choose file(s) (PDF or Image) first.', 'warning');
+                    return false;
+                }
+                if (files.length > MAX_FILES) {
+                    updateStatus(`You can select a maximum of ${MAX_FILES} files. You selected ${files.length}.`, 'error');
+                    return false;
+                }
+                if (typeof pdfjsLib === 'undefined' || typeof XLSX === 'undefined') {
+                    updateStatus('Required libraries (pdf.js or xlsx.js) not loaded. Check your internet connection.', 'error');
+                    return false;
+                }
+                return true;
+            }
+
+            async function prepareFileContent() {
+                let allInputParts = [];
+                let totalPagesCount = 0;
+                const files = fileInput.files;
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.size > MAX_SINGLE_FILE_SIZE_MB * 1024 * 1024) {
+                        throw new Error(`File "${file.name}" exceeds the max size of ${MAX_SINGLE_FILE_SIZE_MB}MB.`);
+                    }
+
+                    if (file.type === 'application/pdf') {
+                        setProcessingState(true, `Processing PDF: ${file.name} (${i + 1}/${files.length})...`);
+                        const pdfArrayBuffer = await file.arrayBuffer();
+                        const pdfDoc = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
+                        
+                        let startPage = 1, endPage = pdfDoc.numPages;
+                        if (files.length === 1) { // Page range only for single PDF
+                           startPage = parseInt(startPageInput.value);
+                           endPage = parseInt(endPageInput.value);
+                           if (isNaN(startPage) || isNaN(endPage) || startPage < 1 || endPage < startPage || endPage > pdfDoc.numPages) {
+                                throw new Error(`Invalid page range for PDF. Please select between 1 and ${pdfDoc.numPages}.`);
+                           }
+                        }
+                        totalPagesCount += (endPage - startPage + 1);
+
+                        setProcessingState(true, `Extracting content from PDF "${file.name}"...`);
+                        const images = await extractImagesFromPdf(pdfDoc, startPage, endPage);
+                        if (images.length === 0) {
+                            const textContent = await extractTextFromPdf(pdfDoc, startPage, endPage);
+                            if (!textContent) throw new Error(`Could not extract text or images from PDF "${file.name}".`);
+                            allInputParts.push({ text: textContent });
+                        } else {
+                            allInputParts.push(...images);
+                        }
+
+                    } else if (file.type.startsWith('image/')) {
+                        setProcessingState(true, `Processing image: ${file.name} (${i + 1}/${files.length})...`);
+                        allInputParts.push(await processImageFile(file));
+                        totalPagesCount++;
+                    } else {
+                        throw new Error(`Unsupported file type: "${file.name}".`);
+                    }
+                }
+                 if (totalPagesCount > 20) {
+                    updateStatus(`Warning: ${totalPagesCount} pages/images selected. This may be slow or fail.`, 'warning', true);
+                 }
+                return allInputParts;
+            }
+
+            function handleGeminiResponse(extractedData) {
+                if (extractedData.error) {
+                    let errMsg = `Failed to process Gemini response: ${extractedData.message}.`;
+                    if (extractedData.rawResponse) errMsg += ` Raw response (truncated): ${truncateText(extractedData.rawResponse, 200)}`;
+                    updateStatus(errMsg, 'error');
+                } else if (typeof extractedData === 'object' && extractedData !== null && extractedData.item_details) {
+                    const summary = extractedData.invoice_summary || {};
+                    const hasItems = Array.isArray(extractedData.item_details) && extractedData.item_details.length > 0;
+
+                    // Store data for download
+                    extractedItemDetails = hasItems ? extractedData.item_details : null;
+                    
+                    // Display results
+                    resultsArea.style.display = 'block';
+                    
+                    // Summary section
+                    document.getElementById('invNum').textContent = summary.invoice_number || 'N/A';
+                    document.getElementById('invDate').textContent = summary.invoice_date || 'N/A';
+                    document.getElementById('invTotal').textContent = summary.total_invoice_amount || 'N/A';
+                    document.getElementById('invCurrency').textContent = summary.currency_total_amount || '';
+                    document.getElementById('invPackages').textContent = summary.total_packages || 'N/A';
+                    invoiceSummarySection.style.display = 'block';
+                    
+                    // Review needed section
+                    const reviewText = extractedData.review_needed || '';
+                    if (reviewText.trim()) {
+                        document.getElementById('reviewNeededDiv').textContent = reviewText;
+                        reviewNeededSection.style.display = 'block';
+                    }
+                    
+                    // Enable download button if there are items
+                    downloadExcelButton.disabled = !hasItems;
+
+                    // Final status message
+                    if (hasItems) {
+                        updateStatus('Extraction successful! Data is displayed below and ready for download.', 'success');
+                    } else {
+                        updateStatus('Invoice summary extracted, but no specific item details were found.', 'warning');
+                    }
+                    finalReviewNoteDiv.style.display = 'block';
+                } else {
+                    updateStatus('Gemini responded, but the data is not in the expected format (item_details not found).', 'error');
+                }
+            }
+            
+            // --- UI Helper Functions ---
+            
+            function resetUI() {
+                extractedItemDetails = null;
+                resultsArea.style.display = 'none';
+                downloadExcelButton.disabled = true;
+                finalReviewNoteDiv.style.display = 'none';
+                invoiceSummarySection.style.display = 'none';
+                reviewNeededSection.style.display = 'none';
+                document.getElementById('reviewNeededDiv').textContent = '';
+                clearMessages();
+            }
+
+            function setProcessingState(isProcessing, statusMsg) {
+                extractButton.disabled = isProcessing;
+                if (isProcessing) {
+                    updateStatus(statusMsg || 'Processing...', 'processing', true);
+                } else {
+                    const currentStatusClass = statusContainer.className;
+                    // Don't clear success/error messages when processing ends
+                    if (currentStatusClass.includes('status-processing')) {
+                        clearMessages();
+                    }
+                }
+            }
+
+            function clearMessages() {
+                statusContainer.style.display = 'none';
+                statusText.textContent = '';
+                loader.style.display = 'none';
+                statusContainer.className = 'status-container';
+            }
+
+            function updateStatus(message, type, showLoader = false) {
+                clearMessages();
+                statusText.textContent = message;
+                statusContainer.classList.add(`status-${type}`);
+                loader.style.display = showLoader ? 'block' : 'none';
+                statusContainer.style.display = 'flex';
+            }
+            
+            function truncateText(text, maxLength) {
+                if (typeof text !== 'string') return String(text);
+                return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+            }
+
+            // --- File and API Functions (Original logic with dynamic URL) ---
+            
+            async function processImageFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0); 
+                            const base64Data = canvas.toDataURL('image/png').split(',')[1];
+                            canvas.remove();
+                            resolve({
+                                inlineData: { data: base64Data, mimeType: 'image/png' },
+                            });
+                        };
+                        img.onerror = (error) => reject(new Error('Failed to load image for processing: ' + error.message));
+                        img.src = event.target.result;
+                    };
+                    reader.onerror = (error) => reject(new Error('Failed to read file for image processing: ' + error.message));
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            async function extractImagesFromPdf(pdfDoc, startPageNum, endPageNum) {
+                const images = [];
+                for (let i = startPageNum; i <= endPageNum; i++) {
+                    try {
+                        const page = await pdfDoc.getPage(i);
+                        const viewport = page.getViewport({ scale: 2.5 }); 
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        const base64Data = canvas.toDataURL('image/png').split(',')[1];
+                        canvas.remove();
+                        images.push({
+                            inlineData: { data: base64Data, mimeType: 'image/png' },
+                        });
+                    } catch (err) {
+                        console.warn(`Failed to render page ${i} as image: ${err.message}`);
+                    }
+                }
+                return images;
+            }
+
+            async function extractTextFromPdf(pdfDoc, startPageNum, endPageNum) {
+                let fullText = '';
+                for (let i = startPageNum; i <= endPageNum; i++) {
+                    try {
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent();
+                        fullText += textContent.items.map(item => item.str).join(' ') + '\n\n';
+                    } catch (err) {
+                        console.warn(`Failed to extract text from page ${i}: ${err.message}`);
+                    }
+                }
+                return fullText.trim();
+            }
+
+            function cleanGeminiResponse(rawText) {
+                 if (typeof rawText !== 'string') return rawText;
+                let text = rawText.trim();
+                const markdownMatch = text.match(/^```json\s*([\s\S]*?)\s*```$/i);
+                if (markdownMatch && markdownMatch[1]) {
+                    text = markdownMatch[1].trim();
+                } else {
+                    const firstBrace = text.indexOf('{');
+                    const firstBracket = text.indexOf('[');
+                    let startIndex = -1;
+                    if (firstBrace !== -1 && firstBracket !== -1) startIndex = Math.min(firstBrace, firstBracket);
+                    else if (firstBrace !== -1) startIndex = firstBrace;
+                    else if (firstBracket !== -1) startIndex = firstBracket;
+                    if (startIndex > 0) text = text.substring(startIndex);
+                }
+                const lastBrace = text.lastIndexOf('}');
+                const lastBracket = text.lastIndexOf(']');
+                let endIndex = -1;
+                if (lastBrace !== -1 && lastBracket !== -1) endIndex = Math.max(lastBrace, lastBracket);
+                    else if (lastBrace !== -1) endIndex = lastBrace;
+                    else if (lastBracket !== -1) endIndex = lastBracket;
+                if (endIndex !== -1 && endIndex < text.length - 1) text = text.substring(0, endIndex + 1);
+                return text;
+            }
+
+            async function callGeminiApi(inputParts) {
+                const promptText = `
+                You are a meticulous data entry expert specializing in customs invoices and packing lists. Your primary goal is maximum accuracy.
+
+                **Your Mission:** Extract data from the provided document(s) and return it in a single, raw JSON object. You must strictly follow all rules below.
+
+                **CRITICAL RULE for Country of Origin (co):**
+                This is the most important rule. You **MUST** find the country of origin and provide its **FULL ENGLISH NAME**.
+                - If you see a 2-letter abbreviation, you **MUST** expand it.
+                - **Examples:**
+                    - 'CN' -> 'China'
+                    - 'US' or 'USA' -> 'United States'
+                    - 'JP' -> 'Japan'
+                    - 'DE' -> 'Germany'
+                    - 'KR' -> 'South Korea'
+                    - 'IN' -> 'India'
+                    - 'IT' -> 'Italy'
+                    - 'FR' -> 'France'
+                    - 'AE' -> 'United Arab Emirates'
+                - The abbreviation might be in any column near the item description, not just a "COO" column. Look carefully for it in the item's row.
+                - If you cannot find any origin information for an item after a thorough search, and only then, leave the value as an empty string "".
+
+                **Core Extraction Rules for Each Item in \`item_details\` array:**
+                1.  **hs_code:** Extract the HS Code exactly as written. Do not change the dots. If it's not present, use an empty string "".
+                2.  **co:** Apply the CRITICAL RULE above.
+                3.  **dec:** The full item description.
+                4.  **qty:** The quantity and its unit (e.g., "150 SETS").
+                5.  **amount:** The monetary value. Use a dot '.' for decimals and NO thousands separators (e.g., 12345.67). Include the currency symbol/code if present (e.g., "12345.67 USD").
+
+                **General Information for \`invoice_summary\` object:**
+                - Extract: "invoice_number", "invoice_date", "total_invoice_amount", "currency_total_amount", "total_packages".
+
+                **Final Verification Step:**
+                - Before generating the final JSON, re-read your extracted data and compare it against the source document one last time.
+                - **Confirm that you have expanded all country codes.** This is mandatory.
+                - List any remaining uncertainties in the "review_needed" string.
+
+                **Output Format:** ONLY a raw JSON object. No explanations, no markdown.
+                {
+                  "item_details": [
+                    {"hs_code": "8517.12.00", "co": "China", "dec": "Smartphone X1", "qty": "10 Pcs", "amount": "2000.00 USD"}
+                  ],
+                  "invoice_summary": { "invoice_number": "INV-123", "invoice_date": "2023-10-26", "total_invoice_amount": "2000.00", "currency_total_amount": "USD", "total_packages": "1" },
+                  "review_needed": ""
+                }
+                `;
+                const contents = [ { role: "user", parts: [{ text: promptText }, ...inputParts] } ];
+                const apiUrl = `${GEMINI_API_URL_PREFIX}${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
+                
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: contents, generationConfig: { temperature: 0.1, maxOutputTokens: 8192 } }),
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: { message: "Unparsable error response" } }));
+                        let msg = `API Error (${response.status}): ${errorData.error?.message || response.statusText}.`;
+                        if (response.status === 400 && msg.includes('API key not valid')) msg = 'Error (400): Invalid API key. Please check Settings.';
+                         if (response.status === 404) msg = `Error (404): Model '${MODEL_NAME}' not found or unsupported. Check model name in Settings.`;
+                        throw new Error(msg);
+                    }
+                    const data = await response.json();
+                    if (data.promptFeedback?.blockReason) {
+                        throw new Error(`Request blocked: ${data.promptFeedback.blockReason}.`);
+                    }
+                    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        const rawResultText = data.candidates[0].content.parts[0].text;
+                        const cleanedJsonString = cleanGeminiResponse(rawResultText);
+                        try {
+                            const jsonData = JSON.parse(cleanedJsonString);
+                             if (typeof jsonData === 'object' && jsonData !== null && 'item_details' in jsonData && 'invoice_summary' in jsonData && 'review_needed' in jsonData) {
+                                if (!Array.isArray(jsonData.item_details)) jsonData.item_details = [];
+                                return jsonData;
+                            } else {
+                                return { error: true, message: "Parsed data is not in expected format.", rawResponse: rawResultText };
+                            }
+                        } catch (parseError) {
+                            return { error: true, message: `Failed to parse JSON: ${parseError.message}`, rawResponse: rawResultText };
+                        }
+                    } else {
+                        return { error: true, message: "API response missing expected text data.", rawResponse: JSON.stringify(data) };
+                    }
+                } catch (networkOrApiError) {
+                    return { error: true, message: networkOrApiError.message };
+                }
+            }
+
+            async function generateAndDownloadExcel(dataArray, defaultFileName) {
+                if (!Array.isArray(dataArray) || dataArray.length === 0) {
+                     updateStatus("No item data to generate Excel file.", 'warning');
+                     return;
+                }
+                const processedData = dataArray.map(item => ({
+                    "HS Code": item.hs_code || "", "Country of Origin": item.co || "",
+                    "Description": item.dec || "", "Quantity": item.qty || "", "Amount": item.amount || ""
+                }));
+                try {
+                    if (window.require && typeof require('electron') !== 'undefined') {
+                        const { ipcRenderer } = require('electron');
+                        const path = require('path');
+                        let defaultSavePath = defaultFileName;
+                        if (currentSourcePath) {
+                            defaultSavePath = path.join(path.dirname(currentSourcePath), defaultFileName);
+                        }
+                        const saveFilePath = await ipcRenderer.invoke('dialog:showSaveDialog', {
+                            title: 'Save Excel File', defaultPath: defaultSavePath,
+                            filters: [{ name: 'Excel Files', extensions: ['xlsx'] }]
+                        });
+                        if (!saveFilePath) { updateStatus('File save cancelled.', 'info'); return; }
+
+                        const result = await ipcRenderer.invoke('excel:writeJsonToExcel', {
+                            jsonData: JSON.stringify(processedData), outputFilePath: saveFilePath
+                        });
+                        if (result.success) {
+                            updateStatus(`Excel file saved: ${saveFilePath}`, 'success');
+                            if (confirm('Open the Excel file?')) {
+                                ipcRenderer.invoke('shell:openPath', saveFilePath);
+                            }
+                        } else {
+                            updateStatus(`Failed to save Excel file: ${result.error}`, 'error');
+                        }
+                    } else {
+                        const worksheet = XLSX.utils.json_to_sheet(processedData);
+                        const workbook = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(workbook, worksheet, "Extracted_Data");
+                        const header = Object.keys(processedData[0]);
+                        worksheet['!cols'] = header.map(key => ({ wch: Math.max(key.length, ...processedData.map(row => String(row[key] || "").length)) + 2 }));
+                        XLSX.writeFile(workbook, defaultFileName);
+                        updateStatus('Excel download started!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error generating Excel file:', error);
+                    updateStatus(`Failed to create Excel file: ${error.message}`, 'error');
+                }
+            }
+
+            // Initial check
+            if (!GEMINI_API_KEY) {
+                updateStatus('Please set your Gemini API Key in Settings first.', 'warning');
+            }
+        });
+    </script>
+</body>
+</html>

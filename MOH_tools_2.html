@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOH Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --bg-color: #1a1b26; --surface-color: #24283b; --primary-color: #7aa2f7;
+            --secondary-color: #bb9af7; --accent-color: #ff9e64; --text-color: #c0caf5;
+            --text-secondary-color: #a9b1d6; --border-color: #3b4261; --success-color: #9ece6a;
+            --error-color: #f7768e; --warning-color: #e0af68; --processing-color: var(--primary-color);
+            --font-primary: 'Roboto', 'Segoe UI', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e2f; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background-color: #5e5eff; border-radius: 10px; border: 2px solid #1e1e2f; }
+
+        html {
+            height: 100vh;
+            overflow: hidden; /* Hide main scrollbar */
+        }
+        body {
+            font-family: var(--font-primary); margin: 0; background-color: var(--bg-color);
+            color: var(--text-color); line-height: 1.6; display: flex; justify-content: center;
+            align-items: flex-start; height: 100%; box-sizing: border-box;
+            padding-top: 30px; /* This is the draggable area */
+            -webkit-app-region: drag; /* MAKE THE ENTIRE BODY DRAGGABLE */
+        }
+        .container-wrapper {
+             width: 100%;
+             height: calc(100% - 30px); /* Fill remaining space below drag bar */
+             overflow-y: auto; /* Allow this container to scroll */
+             padding: 10px 25px 25px;
+             box-sizing: border-box;
+             -webkit-app-region: no-drag; /* CRITICAL: MAKE CONTENT AREA INTERACTIVE */
+        }
+        .container {
+            background-color: var(--surface-color); padding: 30px 35px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35); width: 100%; max-width: 900px; margin: auto;
+        }
+        h1 {
+            color: var(--primary-color); text-align: center; margin: 0 0 25px 0; font-size: 2.2em;
+            font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+        .tool-section { border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px; }
+        .tool-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+        h2 {
+            color: var(--primary-color); margin: 0 0 20px 0; font-size: 1.6em;
+            font-weight: 500; display: flex; align-items: center; gap: 12px;
+        }
+        h2 .fas { font-size: 0.8em; }
+        h3 { color: var(--text-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        h4 { color: var(--text-secondary-color); margin: 15px 0 10px 0; font-weight: 500; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-secondary-color); font-size: 1em; }
+        input[type="file"], input[type="number"] {
+            width: 100%; box-sizing: border-box; border: 1px solid var(--border-color); background-color: var(--bg-color);
+            color: var(--text-color); border-radius: 8px; transition: border-color 0.3s;
+            font-size: 1em; height: 50px; margin-bottom: 15px;
+        }
+        input[type="file"] { padding: 0; display: flex; align-items: center; }
+        input[type="number"] { padding: 0 12px; }
+        input[type="file"]:focus-within, input[type="number"]:focus {
+            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.3);
+        }
+        input[type="file"]::file-selector-button {
+            background-color: var(--primary-color); color: var(--bg-color); border: none;
+            padding: 0 20px; height: 100%; border-radius: 7px 0 0 7px;
+            margin-right: 15px; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease-in-out;
+        }
+        input[type="file"]::file-selector-button:hover { background-color: #6a8ef0; }
+        input[type="file"]::after {
+            content: attr(data-file-name); padding: 0 15px; color: var(--text-secondary-color);
+            font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        button {
+            color: var(--bg-color); background-color: var(--primary-color); padding: 12px 25px; border: none;
+            border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 500;
+            transition: all 0.2s ease; display: inline-flex; align-items: center;
+            justify-content: center; gap: 10px; margin-right: 10px; margin-bottom: 10px;
+        }
+        button:hover { opacity: 0.85; box-shadow: 0 4px 12px rgba(var(--primary-color), 0.2); }
+        button:active { transform: translateY(1px); }
+        button:disabled {
+            background-color: var(--border-color); color: var(--text-secondary-color); cursor: not-allowed;
+            box-shadow: none; opacity: 0.7;
+        }
+        button.btn-secondary { background-color: var(--accent-color); }
+        button.btn-secondary:hover { box-shadow: 0 4px 12px rgba(var(--accent-color), 0.2); }
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3); border-top: 3px solid #fff; border-radius: 50%;
+            width: 18px; height: 18px; animation: spin 0.8s linear infinite; display: none;
+        }
+        button.loading .loader { display: inline-block; }
+        button.loading .button-text { display: none; }
+        .status-box {
+            margin-top: 15px; padding: 12px 15px; border-radius: 8px; font-weight: 500;
+            text-align: center; display: none; word-break: break-word; font-size: 0.95em;
+        }
+        .status-box.status-info { background-color: rgba(var(--processing-color), 0.15); border: 1px solid var(--processing-color); color: var(--processing-color); }
+        .status-box.status-success { background-color: rgba(var(--success-color), 0.15); border: 1px solid var(--success-color); color: var(--success-color); }
+        .status-box.status-error { background-color: rgba(var(--error-color), 0.15); border: 1px solid var(--error-color); color: var(--error-color); }
+        .status-box.status-warning { background-color: rgba(var(--warning-color), 0.15); border: 1px solid var(--warning-color); color: var(--warning-color); }
+        .results-area {
+            display: none; margin-top: 20px; padding: 20px; background-color: rgba(var(--bg-color), 0.5);
+            border: 1px solid var(--border-color); border-radius: 8px;
+        }
+        .result-category { display: none; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .result-category:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .file-count { color: var(--text-secondary-color); font-size: 0.9em; margin-left: 5px; }
+        #pdfSplitResults { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px; }
+        #pdfSplitResults a {
+            background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-secondary-color);
+            padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9em; transition: all 0.2s ease;
+        }
+        #pdfSplitResults a:hover { background-color: var(--primary-color); color: var(--bg-color); border-color: var(--primary-color); }
+        .note {
+            font-size: 0.9em; color: var(--warning-color); background-color: rgba(var(--warning-color), 0.1);
+            border: 1px solid rgba(var(--warning-color), 0.2); padding: 10px; border-radius: 6px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <div class="container-wrapper">
+        <div class="container">
+            <h1><i class="fas fa-cogs"></i> MOH Tools</h1>
+            <div class="tool-section" id="zip-extractor-section">
+                <h2><i class="fas fa-file-zipper"></i>ZIP Extractor</h2>
+                <label for="zipFiles">Select ZIP file(s):</label>
+                <input type="file" id="zipFiles" accept=".zip" multiple data-file-name="No file chosen">
+                <button id="processBtn">
+                    <span class="loader"></span><span class="button-text">Start Processing</span>
+                </button>
+                <div id="status" class="status-box"></div>
+                <div class="results-area" id="zipResultsArea">
+                    <h3>Extracted Results</h3>
+                    <div class="result-category" id="pdfResults">
+                        <h4>PDF Files <span class="file-count" id="pdfCount"></span></h4>
+                        <button id="downloadPdfZipBtn">Download ZIP</button>
+                        <button id="downloadPdfCombinedBtn" class="btn-secondary">Combine & Download PDF</button>
+                    </div>
+                    <div class="result-category" id="imageResults">
+                        <h4>Image Files <span class="file-count" id="imageCount"></span></h4>
+                        <button id="downloadImageZipBtn">Download ZIP</button>
+                        <button id="downloadImagePdfBtn" class="btn-secondary">Convert to PDF & Download</button>
+                    </div>
+                    <div class="result-category" id="excelResults">
+                        <h4>Excel Files <span class="file-count" id="excelCount"></span></h4>
+                        <button id="downloadExcelZipBtn">Download ZIP</button>
+                        <button id="downloadExcelPdfBtn" class="btn-secondary">Convert to PDF & Download</button>
+                    </div>
+                    <div class="result-category" id="otherResults">
+                        <h4>Other Files <span class="file-count" id="otherCount"></span></h4>
+                        <button id="downloadOtherZipBtn">Download ZIP</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tool-section" id="pdf-tools-section">
+                 <h2><i class="fas fa-file-pdf"></i>Split PDF File</h2>
+                 <label for="pdfInputForSplit">Select PDF file:</label>
+                 <input type="file" id="pdfInputForSplit" accept=".pdf" data-file-name="No file chosen">
+                 <label for="maxSizeSplit">Max size per part (MB):</label>
+                 <input type="number" id="maxSizeSplit" value="4.8" min="0.1" step="0.1">
+                 <div>
+                    <button id="splitPdfBtn">
+                        <span class="loader"></span><span class="button-text">Split File</span>
+                    </button>
+                    <button id="downloadSplitPdfZipBtn" class="btn-secondary" style="display: none;">
+                       <span class="loader"></span><span class="button-text">Download Parts as ZIP</span>
+                    </button>
+                </div>
+                 <div id="pdfSplitStatus" class="status-box"></div>
+                 <div id="pdfSplitResults"></div>
+                 <p class="note" id="split-size-note" style="display: none; margin-top: 15px;">
+                     <strong>Note:</strong> If a resulting file is larger than 5MB, it means at least one page in the original file is larger than this size.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Electron Modules ---
+        const isElectron = typeof window.require === 'function';
+        const ipcRenderer = isElectron ? window.require('electron').ipcRenderer : null;
+        const fs = isElectron ? window.require('fs') : null;
+        const path = isElectron ? window.require('path') : null;
+
+        // --- UI Elements ---
+        const ui = {
+            status: document.getElementById('status'),
+            pdfSplitStatus: document.getElementById('pdfSplitStatus'),
+            zipFiles: document.getElementById('zipFiles'),
+            processBtn: document.getElementById('processBtn'),
+            zipResultsArea: document.getElementById('zipResultsArea'),
+            pdfInputForSplit: document.getElementById('pdfInputForSplit'),
+            splitPdfBtn: document.getElementById('splitPdfBtn'),
+            downloadSplitPdfZipBtn: document.getElementById('downloadSplitPdfZipBtn'),
+            maxSizeSplitInput: document.getElementById('maxSizeSplit'),
+            splitSizeNote: document.getElementById('split-size-note'),
+            pdfSplitResults: document.getElementById('pdfSplitResults')
+        };
+        
+        // --- Libraries ---
+        const { jsPDF } = window.jspdf;
+        const { PDFDocument } = window.PDFLib;
+        
+        // --- State ---
+        let categorizedFiles = {}; let splitPdfChunks = [];
+        let sourceZipPath = null; let sourcePdfSplitPath = null;
+
+        // --- Helper Functions ---
+        const showLoader = (btn) => btn?.classList.add('loading');
+        const hideLoader = (btn) => btn?.classList.remove('loading');
+        const disableElements = (elements, disabled = true) => elements.forEach(el => el && (el.disabled = disabled));
+
+        function setStatus(element, message, type = 'info') {
+            if(!element) return;
+            element.textContent = message;
+            element.className = `status-box status-${type}`;
+            element.style.display = 'block';
+        }
+        function clearStatus(element) {
+             if(element) {
+                element.textContent = '';
+                element.className = 'status-box';
+                element.style.display = 'none';
+             }
+        }
+        const formatBytes = (bytes, decimals = 2) => {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        };
+        const showToast = (message, type = 'info') => console.log(`TOAST (${type}): ${message}`);
+
+        async function saveBlobWithDialog(blob, defaultFileName, filters, sourcePathForDir) {
+            if (!isElectron) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = defaultFileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                return;
+            }
+            const defaultPath = sourcePathForDir ? path.join(path.dirname(sourcePathForDir), defaultFileName) : defaultFileName;
+            const savePath = await ipcRenderer.invoke('dialog:showSaveDialog', { title: 'Save File', defaultPath, filters });
+            if (savePath) {
+                fs.writeFile(savePath, Buffer.from(await blob.arrayBuffer()), err => {
+                    if (err) showToast(`Error saving file: ${err.message}`, 'error');
+                    else showToast(`File "${path.basename(savePath)}" saved!`, 'success');
+                });
+            } else {
+                showToast('Save operation cancelled.', 'info');
+            }
+        }
+        
+        // --- Core Logic ---
+        async function unzipRecursively(zipBlob, currentPath = '') {
+            const zip = await JSZip.loadAsync(zipBlob);
+            for (const relativePath in zip.files) {
+                const zipEntry = zip.files[relativePath];
+                if (zipEntry.dir || zipEntry.name.startsWith('__MACOSX/')) continue;
+                const fullPath = path.join(currentPath, zipEntry.name).replace(/\\/g, '/');
+                const fileExtension = path.extname(zipEntry.name).toLowerCase().substring(1);
+                const fileBlob = await zipEntry.async('blob');
+
+                if (fileExtension === 'zip') {
+                    await unzipRecursively(fileBlob, path.dirname(fullPath));
+                } else {
+                    const uniqueName = fullPath.replace(/[/\\]/g, '_');
+                    const fileData = { name: uniqueName, blob: fileBlob, originalName: zipEntry.name };
+                    if (['pdf'].includes(fileExtension)) categorizedFiles.pdf.push(fileData);
+                    else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) categorizedFiles.image.push(fileData);
+                    else if (['xls', 'xlsx', 'xlsm', 'xlsb', 'csv'].includes(fileExtension)) categorizedFiles.excel.push(fileData);
+                    else categorizedFiles.other.push(fileData);
+                }
+            }
+        }
+
+        function updateZipUI() {
+            let foundAnyFiles = false;
+            const categories = {
+                pdf: document.getElementById('pdfResults'), image: document.getElementById('imageResults'),
+                excel: document.getElementById('excelResults'), other: document.getElementById('otherResults'),
+            };
+
+            for(const key in categories) {
+                const files = categorizedFiles[key];
+                const count = files.length;
+                const element = categories[key];
+                if(element) {
+                    if(count > 0) {
+                        element.style.display = 'block';
+                        element.querySelector('.file-count').textContent = `(${count} ${count === 1 ? 'file' : 'files'})`;
+                        disableElements(element.querySelectorAll('button'), false);
+                        foundAnyFiles = true;
+                    } else {
+                        element.style.display = 'none';
+                    }
+                }
+            }
+            ui.zipResultsArea.style.display = foundAnyFiles ? 'block' : 'none';
+        }
+        
+         async function downloadFilesAsZip(files, zipFileName, buttonToLoad, statusElem) {
+             if (!files?.length) return;
+             setStatus(statusElem, `Creating ZIP file...`, 'info');
+             showLoader(buttonToLoad); disableElements([buttonToLoad], true);
+             try {
+                 const zip = new JSZip();
+                 files.forEach(file => zip.file(file.name, file.blob));
+                 const zipBlob = await zip.generateAsync({ type: 'blob' });
+                 await saveBlobWithDialog(zipBlob, zipFileName, [{ name: 'ZIP Files', extensions: ['zip'] }], sourceZipPath || sourcePdfSplitPath);
+             } catch (error) { setStatus(statusElem, `Error creating ZIP: ${error.message}`, 'error'); }
+             finally { hideLoader(buttonToLoad); disableElements([buttonToLoad], false); }
+         }
+
+        async function downloadMergedPdf() {
+             const btn = document.getElementById('downloadPdfCombinedBtn');
+             setStatus(ui.status, `Merging ${categorizedFiles.pdf.length} PDF files...`, 'info');
+             showLoader(btn); disableElements([btn], true);
+             try {
+                const mergedPdf = await PDFDocument.create();
+                for (const fileData of categorizedFiles.pdf) {
+                     try {
+                         const pdfToMerge = await PDFDocument.load(await fileData.blob.arrayBuffer(), { ignoreEncryption: true });
+                         const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
+                         copiedPages.forEach(p => mergedPdf.addPage(p));
+                     } catch (e) { console.error(`Skipping ${fileData.originalName}:`, e); }
+                }
+                if (mergedPdf.getPageCount() > 0) {
+                     const bytes = await mergedPdf.save();
+                     await saveBlobWithDialog(new Blob([bytes], {type:'application/pdf'}), 'merged_files.pdf', [{name:'PDF',extensions:['pdf']}], sourceZipPath);
+                } else setStatus(ui.status, 'No valid pages to merge.', 'warning');
+             } catch (error) { setStatus(ui.status, `Error merging PDFs: ${error.message}`, 'error'); }
+             finally { hideLoader(btn); disableElements([btn], categorizedFiles.pdf.length === 0); }
+         }
+         
+        async function convertImagesToPdf() {
+            const btn = document.getElementById('downloadImagePdfBtn');
+            setStatus(ui.status, `Converting ${categorizedFiles.image.length} images...`, 'info');
+            showLoader(btn); disableElements([btn], true);
+            try {
+                const pdf = new jsPDF('p', 'pt', 'a4');
+                for (const [i, fileData] of categorizedFiles.image.entries()) {
+                    const imgUrl = URL.createObjectURL(fileData.blob);
+                    const img = await new Promise(r => { let imgEl=new Image(); imgEl.onload=()=>r(imgEl); imgEl.src=imgUrl; });
+                    URL.revokeObjectURL(imgUrl);
+                    if(i>0) pdf.addPage();
+                    pdf.addImage(img, 'JPEG', 0, 0, pdf.internal.pageSize.width, pdf.internal.pageSize.height, undefined, 'FAST');
+                }
+                await saveBlobWithDialog(pdf.output('blob'), 'converted_images.pdf', [{name:'PDF',extensions:['pdf']}], sourceZipPath);
+            } catch (error) { setStatus(ui.status, `Error converting images: ${error.message}`, 'error'); }
+            finally { hideLoader(btn); disableElements([btn], categorizedFiles.image.length === 0); }
+        }
+
+        async function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        async function convertExcelToPdf() {
+            const btn = document.getElementById('downloadExcelPdfBtn');
+            setStatus(ui.status, `Converting ${categorizedFiles.excel.length} Excel files...`, 'info');
+            showLoader(btn); disableElements([btn], true);
+            try {
+                if (isElectron && ipcRenderer && fs && path) {
+                    // 1. احفظ كل ملف Excel مؤقتاً على القرص
+                    const tempDir = await ipcRenderer.invoke('fs:getTempDir');
+                    const tempExcelPaths = [];
+                    for (const fileData of categorizedFiles.excel) {
+                        const safeName = fileData.originalName.replace(/[\\/:"*?<>|]+/g, '_');
+                        const tempPath = path.join(tempDir, `${Date.now()}_${safeName}`);
+                        const buffer = Buffer.from(await fileData.blob.arrayBuffer());
+                        fs.writeFileSync(tempPath, buffer);
+                        tempExcelPaths.push(tempPath);
+                    }
+                    // 2. اطلب من المستخدم مكان حفظ ملف PDF الناتج
+                    const defaultPdfName = 'converted_excel.pdf';
+                    const savePath = await ipcRenderer.invoke('dialog:showSaveDialog', {
+                        title: 'Save PDF File',
+                        defaultPath: path.join(path.dirname(sourceZipPath || tempDir), defaultPdfName),
+                        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+                    });
+                    if (!savePath) {
+                        setStatus(ui.status, 'Operation cancelled.', 'warning');
+                        return;
+                    }
+                    // 3. استدعاء backend للتحويل
+                    setStatus(ui.status, 'Converting Excel files to PDF (backend)...', 'info');
+                    const result = await ipcRenderer.invoke('excel:convertToPdf', {
+                        excelFilePaths: tempExcelPaths,
+                        outputPdfPath: savePath
+                    });
+                    if (result && result.success) {
+                        setStatus(ui.status, `PDF saved: ${savePath}`, 'success');
+                        showToast('PDF file created successfully!', 'success');
+                    } else {
+                        setStatus(ui.status, `Error: ${result && result.error ? result.error : 'Unknown error'}`, 'error');
+                    }
+                    // 4. حذف الملفات المؤقتة
+                    for (const tempPath of tempExcelPaths) {
+                        try { fs.unlinkSync(tempPath); } catch (e) {}
+                    }
+                } else {
+                    // --- الطريقة القديمة (jsPDF في المتصفح) ---
+                    if (!window.XLSX) {
+                        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+                    }
+                    if (typeof jsPDF.API.autoTable === 'undefined') {
+                        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+                    }
+                    const pdf = new jsPDF('p', 'pt', 'a4'); let isFirst = true;
+                    for (const fileData of categorizedFiles.excel) {
+                        const workbook = XLSX.read(await fileData.blob.arrayBuffer(), {type: 'array'});
+                        for (const sheetName of workbook.SheetNames) {
+                            if (!isFirst) pdf.addPage(); isFirst=false;
+                            const ws = workbook.Sheets[sheetName];
+                            const data = XLSX.utils.sheet_to_json(ws, {header:1});
+                            pdf.setFontSize(12).text(`${fileData.originalName} - ${sheetName}`, 40, 40);
+                            if (data.length > 0) jsPDF.API.autoTable.apply(pdf, [{startY: 50, head: [data[0]], body: data.slice(1)}]);
+                            else pdf.setFontSize(10).text('Sheet is empty.', 40, 60);
+                        }
+                    }
+                    await saveBlobWithDialog(pdf.output('blob'), 'converted_excel.pdf', [{name:'PDF',extensions:['pdf']}], sourceZipPath);
+                }
+            } catch(error) { setStatus(ui.status, `Error converting Excel: ${error.message}`, 'error'); }
+            finally { hideLoader(btn); disableElements([btn], categorizedFiles.excel.length === 0); }
+        }
+        
+        async function splitPdfBySize() {
+            const file = ui.pdfInputForSplit.files[0];
+            const maxSizeMB = parseFloat(ui.maxSizeSplitInput.value);
+            splitPdfChunks = [];
+            ui.pdfSplitResults.innerHTML = ''; ui.downloadSplitPdfZipBtn.style.display = 'none';
+            ui.splitSizeNote.style.display = 'none';
+            if (!file) return setStatus(ui.pdfSplitStatus, "Please select a PDF file.", 'error');
+            sourcePdfSplitPath = isElectron ? file.path : null;
+            
+            setStatus(ui.pdfSplitStatus, `Reading & splitting ${file.name}...`, 'info');
+            showLoader(ui.splitPdfBtn); disableElements([ui.pdfInputForSplit, ui.maxSizeSplitInput, ui.splitPdfBtn], true);
+            try {
+                const originalPdf = await PDFDocument.load(await file.arrayBuffer());
+                let startPage = 0; let chunkIndex = 1;
+                while(startPage < originalPdf.getPageCount()) {
+                    let pageCountInChunk = 1;
+                    while(startPage + pageCountInChunk <= originalPdf.getPageCount()) {
+                        const tempDoc = await PDFDocument.create();
+                        const indices = Array.from({length: pageCountInChunk}, (_, i) => startPage + i);
+                        const copiedPages = await tempDoc.copyPages(originalPdf, indices);
+                        copiedPages.forEach(p => tempDoc.addPage(p));
+                        const bytes = await tempDoc.save();
+                        if (bytes.byteLength > maxSizeMB * 1024 * 1024) { pageCountInChunk--; break; }
+                        if (startPage + pageCountInChunk === originalPdf.getPageCount()) break;
+                        pageCountInChunk++;
+                    }
+                    if (pageCountInChunk === 0) pageCountInChunk = 1;
+
+                    const finalDoc = await PDFDocument.create();
+                    const indices = Array.from({length: pageCountInChunk}, (_, i) => startPage + i);
+                    const copied = await finalDoc.copyPages(originalPdf, indices);
+                    copied.forEach(p => finalDoc.addPage(p));
+                    const finalBytes = await finalDoc.save();
+
+                    splitPdfChunks.push({
+                        name: `${path.basename(file.name, '.pdf')}_part${chunkIndex++}.pdf`,
+                        blob: new Blob([finalBytes], { type: 'application/pdf' }),
+                        size: finalBytes.byteLength
+                    });
+                    startPage += pageCountInChunk;
+                }
+                setStatus(ui.pdfSplitStatus, `Splitting complete: ${splitPdfChunks.length} parts.`, 'success');
+                ui.splitSizeNote.style.display = 'block';
+                splitPdfChunks.forEach((chunk, index) => {
+                     const a = document.createElement('a'); a.href="#";
+                     a.onclick = e => { e.preventDefault(); saveBlobWithDialog(chunk.blob, chunk.name, [{name:'PDF',extensions:['pdf']}], sourcePdfSplitPath);};
+                     a.innerHTML = `Part ${index + 1} <span>(${formatBytes(chunk.size)})</span>`;
+                     ui.pdfSplitResults.append(a);
+                 });
+                 if (splitPdfChunks.length > 1) ui.downloadSplitPdfZipBtn.style.display = 'inline-flex';
+            } catch(e) { setStatus(ui.pdfSplitStatus, `Error: ${e.message}`, 'error'); }
+            finally { hideLoader(ui.splitPdfBtn); disableElements([ui.pdfInputForSplit, ui.maxSizeSplitInput, ui.splitPdfBtn, ui.downloadSplitPdfZipBtn], false); }
+        }
+        
+        // --- Event Listeners Setup ---
+        const setupFileInputListener = (input) => {
+            input?.addEventListener('change', () => {
+                const files = input.files;
+                input.setAttribute('data-file-name', files.length > 0 ? (files.length > 1 ? `${files.length} files chosen` : files[0].name) : 'No file chosen');
+            });
+        };
+        setupFileInputListener(ui.zipFiles); setupFileInputListener(ui.pdfInputForSplit);
+
+        ui.processBtn?.addEventListener('click', async () => {
+            if (!ui.zipFiles.files.length) return setStatus(ui.status, "Please select ZIP file(s).", 'error');
+            sourceZipPath = isElectron ? ui.zipFiles.files[0]?.path : null;
+            categorizedFiles = { pdf: [], image: [], excel: [], other: [] };
+            ui.zipResultsArea.style.display = 'none';
+            setStatus(ui.status, `Processing ${ui.zipFiles.files.length} file(s)...`, 'info');
+            showLoader(ui.processBtn); disableElements([ui.zipFiles, ui.processBtn], true);
+            try {
+                for (const file of ui.zipFiles.files) await unzipRecursively(file);
+                updateZipUI();
+                const total = Object.values(categorizedFiles).reduce((sum, arr) => sum + arr.length, 0);
+                setStatus(ui.status, `Complete! Found ${total} files.`, 'success');
+            } catch (error) { setStatus(ui.status, `Error: ${error.message}`, 'error'); }
+            finally { hideLoader(ui.processBtn); disableElements([ui.zipFiles, ui.processBtn], false); }
+        });
+        
+        document.getElementById('downloadPdfZipBtn')?.addEventListener('click', (e) => downloadFilesAsZip(categorizedFiles.pdf, 'pdfs.zip', e.currentTarget, ui.status));
+        document.getElementById('downloadImageZipBtn')?.addEventListener('click', (e) => downloadFilesAsZip(categorizedFiles.image, 'images.zip', e.currentTarget, ui.status));
+        document.getElementById('downloadExcelZipBtn')?.addEventListener('click', (e) => downloadFilesAsZip(categorizedFiles.excel, 'excel.zip', e.currentTarget, ui.status));
+        document.getElementById('downloadOtherZipBtn')?.addEventListener('click', (e) => downloadFilesAsZip(categorizedFiles.other, 'other.zip', e.currentTarget, ui.status));
+        document.getElementById('downloadPdfCombinedBtn')?.addEventListener('click', downloadMergedPdf);
+        document.getElementById('downloadImagePdfBtn')?.addEventListener('click', convertImagesToPdf);
+        document.getElementById('downloadExcelPdfBtn')?.addEventListener('click', convertExcelToPdf);
+        ui.splitPdfBtn?.addEventListener('click', splitPdfBySize);
+        ui.downloadSplitPdfZipBtn?.addEventListener('click', (e) => {
+            const fName = ui.pdfInputForSplit.files[0]?.name.replace(/\.pdf$/i, '') || 'split_pdf';
+            downloadFilesAsZip(splitPdfChunks, `${fName}_parts.zip`, e.currentTarget, ui.pdfSplitStatus);
+        });
+
+    </script>
+</body>
+</html>

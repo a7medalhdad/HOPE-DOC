@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="appTitle">Smart Data Extractor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Draggable Region */
+        .drag-region {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            -webkit-app-region: drag;
+            z-index: 99999;
+        }
+
+        :root {
+            --bg-color: #1a1b26;
+            --surface-color: #24283b;
+            --primary-color: #7aa2f7;
+            --secondary-color: #bb9af7;
+            --accent-color: #ff9e64;
+            --text-color: #c0caf5;
+            --text-secondary-color: #a9b1d6;
+            --border-color: #3b4261;
+            --success-color: #9ece6a;
+            --error-color: #f7768e;
+            --warning-color: #e0af68;
+            --processing-color: var(--primary-color);
+            --font-primary: 'Roboto', 'Segoe UI', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e2f; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background-color: #5e5eff; border-radius: 10px; border: 2px solid #1e1e2f; }
+
+        body {
+            font-family: var(--font-primary);
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 30px 25px 25px; /* Adjusted top padding */
+            box-sizing: border-box;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .container {
+            background-color: var(--surface-color);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            width: 100%;
+            max-width: 850px;
+            margin: auto;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        h1#pageTitle {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 0;
+            font-size: 2em;
+            font-weight: 500;
+            flex-grow: 1;
+        }
+
+        .header-buttons button {
+            background-color: var(--secondary-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+        .header-buttons button:hover { background-color: #a885e3; }
+        .header-buttons button:active { transform: translateY(1px); }
+        .header-buttons button .icon { width: 18px; height: 18px; }
+
+        #apiUsageIndicator {
+            font-size: 0.85em;
+            color: var(--text-secondary-color);
+            padding: 8px 12px;
+            background-color: rgba(var(--primary-color), 0.05);
+            border: 1px solid rgba(var(--primary-color), 0.2);
+            border-radius: 6px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #apiUsageIndicator a { color: var(--primary-color); text-decoration: none; }
+        #apiUsageIndicator a:hover { text-decoration: underline; }
+
+        .info-box {
+            background-color: rgba(var(--primary-color), 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(var(--primary-color), 0.3);
+            padding: 18px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        label#fileInputLabel {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 500;
+            color: var(--text-secondary-color);
+            font-size: 1.05em;
+        }
+
+        input[type="file"] {
+            width: 100%; padding: 0; margin-bottom: 15px; border: 1px solid var(--border-color);
+            background-color: var(--bg-color); color: var(--text-color); border-radius: 8px;
+            box-sizing: border-box; transition: border-color 0.3s; height: 50px;
+            display: flex; align-items: center;
+        }
+        input[type="file"]:focus-within {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.3);
+        }
+        input[type="file"]::file-selector-button {
+            background-color: var(--primary-color); color: var(--bg-color); border: none;
+            padding: 0 20px; height: 100%; border-top-left-radius: 7px;
+            border-bottom-left-radius: 7px; margin-right: 15px; cursor: pointer;
+            font-weight: 500; transition: background-color 0.2s ease-in-out;
+        }
+        input[type="file"]::file-selector-button:hover { background-color: #6a8ef0; }
+        input[type="file"]::after {
+            content: attr(data-file-name); padding: 0 15px;
+            color: var(--text-secondary-color); font-size: 0.9em;
+        }
+
+        .action-buttons-group { display: flex; gap: 15px; margin-bottom: 30px; }
+        .main-action-button, .secondary-action-button {
+            color: #fff; padding: 16px 0; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 1.1em; font-weight: 500; flex-grow: 1;
+            transition: all 0.3s ease; display: flex; align-items: center;
+            justify-content: center; gap: 10px;
+        }
+        .main-action-button { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); }
+        .secondary-action-button { background-color: var(--accent-color); }
+        .main-action-button:hover, .secondary-action-button:hover {
+            opacity: 0.9; box-shadow: 0 5px 15px rgba(var(--primary-color), 0.2);
+        }
+        .secondary-action-button:hover { box-shadow: 0 5px 15px rgba(var(--accent-color), 0.2); }
+        .main-action-button:active, .secondary-action-button:active { transform: translateY(1px) scale(0.99); }
+        .main-action-button:disabled, .secondary-action-button:disabled {
+            background: var(--border-color) !important; color: var(--text-secondary-color);
+            cursor: not-allowed; box-shadow: none; opacity: 0.7;
+        }
+        .main-action-button .icon, .secondary-action-button .icon { width: 20px; height: 20px; }
+
+        .status-container {
+            margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 500;
+            text-align: center; display: flex; align-items: center; justify-content: center;
+            min-height: 45px; transition: all 0.3s ease;
+        }
+        .status-container.status-processing { background-color: rgba(var(--processing-color), 0.15); border: 1px solid var(--processing-color); color: var(--processing-color); }
+        .status-container.status-success { background-color: rgba(var(--success-color), 0.15); border: 1px solid var(--success-color); color: var(--success-color); }
+        .status-container.status-error { background-color: rgba(var(--error-color), 0.15); border: 1px solid var(--error-color); color: var(--error-color); }
+        .status-container.status-warning { background-color: rgba(var(--warning-color), 0.15); border: 1px solid var(--warning-color); color: var(--warning-color); }
+
+        .loader {
+            border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color);
+            border-radius: 50%; width: 22px; height: 22px;
+            animation: spin 0.8s linear infinite; display: none; margin-right: 12px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .results-section {
+            margin-top: 35px; border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 25px; background-color: rgba(var(--bg-color), 0.5);
+        }
+        .results-section h2 {
+            color: var(--primary-color); margin-top: 0; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
+            font-size: 1.4em; font-weight: 500;
+        }
+
+        .result-actions {
+            margin-top: 25px; margin-bottom: 25px; display: flex; gap: 18px;
+            justify-content: flex-start;
+        }
+        .result-actions button {
+            color: var(--bg-color); font-size: 0.95em; font-weight: 500; padding: 12px 22px;
+            border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .result-actions button:hover { opacity: 0.85; transform: translateY(-1px); }
+        .result-actions button:disabled {
+            background-color: var(--border-color) !important;
+            color: var(--text-secondary-color) !important; cursor: not-allowed;
+            opacity: 0.6; transform: none;
+        }
+        .result-actions button.copy-btn { background-color: var(--accent-color); }
+        .result-actions button.excel-btn { background-color: var(--success-color); }
+        .result-actions button.word-btn { background-color: var(--primary-color); color: var(--bg-color); }
+        .result-actions button .icon { width: 18px; height: 18px; }
+
+        pre {
+            white-space: pre-wrap; word-wrap: break-word;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            background-color: rgba(var(--bg-color), 0.7); padding: 18px; border-radius: 8px;
+            border: 1px solid var(--border-color); max-height: 450px; overflow-y: auto;
+            color: var(--text-color); font-size: 0.9em; line-height: 1.6; text-align: left;
+        }
+
+        .icon { display: inline-block; vertical-align: middle; fill: currentColor; }
+
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            background-color: var(--surface-color); margin: 15% auto; padding: 30px;
+            border: 1px solid var(--border-color); width: 80%; max-width: 500px;
+            border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            color: var(--text-color);
+        }
+        .modal-content h2 { color: var(--primary-color); margin-top: 0; margin-bottom: 20px; }
+        .modal-content label {
+            display: block; margin-bottom: 8px; font-weight: 500;
+            color: var(--text-secondary-color);
+        }
+        .modal-content input[type="text"], .modal-content input[type="password"] {
+            width: calc(100% - 24px); padding: 12px; margin-bottom: 20px;
+            border: 1px solid var(--border-color); background-color: var(--bg-color);
+            color: var(--text-color); border-radius: 6px; font-size: 1em; text-align: left;
+        }
+        .modal-content input[type="text"]:focus, .modal-content input[type="password"]:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.3);
+        }
+        .modal-buttons { text-align: right; }
+        .modal-buttons button {
+            padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer;
+            font-weight: 500; margin-left: 10px; transition: background-color 0.2s ease;
+        }
+        .modal-buttons button.save-btn { background-color: var(--primary-color); color: var(--bg-color); }
+        .modal-buttons button.save-btn:hover { background-color: #6a8ef0; }
+        .modal-buttons button.cancel-btn { background-color: var(--border-color); color: var(--text-secondary-color); }
+        .modal-buttons button.cancel-btn:hover { background-color: #4b5372; }
+
+        /* --- Toast Notification Styles --- */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-left: 5px solid;
+            opacity: 0;
+            transform: translateX(120%);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            max-width: 400px;
+            word-break: break-word;
+            font-size: 0.95em;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.success { border-color: var(--success-color); }
+        .toast.error { border-color: var(--error-color); }
+        .toast.info { border-color: var(--primary-color); }
+    </style>
+</head>
+<body dir="ltr">
+    <div class="drag-region"></div>
+    <div class="container">
+        <div class="header-controls">
+            <h1 id="pageTitle">Smart Data Extractor</h1>
+            <div class="header-buttons">
+                <button id="settingsButton" onclick="openSettingsModal()">
+                    <svg class="icon"><use xlink:href="#icon-settings"></use></svg>
+                    <span id="settingsButtonText">Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="apiUsageIndicator" style="display:none;">
+            <!-- Content will be set by JavaScript -->
+        </div>
+
+        <div class="info-box" id="fileSizeWarningBox">
+            <span id="fileSizeWarningText">Large files (over 10-15MB for PDFs, 4MB for images) may take longer to process or exceed API limits. Please be patient.</span>
+        </div>
+
+        <label for="fileInput" id="fileInputLabel">Choose PDF or Image File:</label>
+        <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" data-file-name="No file chosen">
+
+        <div class="action-buttons-group">
+            <button id="extractButton" class="main-action-button" onclick="processUploadedFile()">
+                <svg class="icon"><use xlink:href="#icon-upload"></use></svg>
+                <span id="extractButtonText">Extract from File</span>
+            </button>
+            <button id="pasteImageButton" class="secondary-action-button" onclick="handlePasteImageClick()">
+                <svg class="icon"><use xlink:href="#icon-paste"></use></svg>
+                <span id="pasteImageButtonText">Paste Image</span>
+            </button>
+        </div>
+
+        <div id="statusContainer" class="status-container" style="display:none;">
+            <div class="loader" id="loader"></div>
+            <span id="statusText"></span>
+        </div>
+
+        <div id="resultsContainer" style="display:none;">
+            <div class="result-actions">
+                <button id="copyButton" class="copy-btn" onclick="copyToClipboard()" disabled>
+                    <svg class="icon"><use xlink:href="#icon-copy"></use></svg>
+                    <span id="copyButtonText">Copy All Results</span>
+                </button>
+                <button id="downloadExcelButton" class="excel-btn" onclick="downloadAsExcel()" disabled>
+                     <svg class="icon"><use xlink:href="#icon-excel"></use></svg>
+                    <span id="downloadExcelButtonText">Download Tables as Excel</span>
+                </button>
+                <button id="downloadWordButton" class="word-btn" onclick="downloadAsWord()" disabled>
+                     <svg class="icon"><use xlink:href="#icon-word"></use></svg>
+                    <span id="downloadWordButtonText">Download as Word Doc</span>
+                </button>
+            </div>
+
+            <div class="results-section" id="specificInfoSection" style="display:none;">
+                <h2 id="specificInfoTitle">Extracted Information:</h2>
+                <pre id="specificInfo"></pre>
+            </div>
+
+            <div class="results-section" id="tablesSection" style="display:none;">
+                <h2 id="tablesTitle">Extracted Tables (Markdown):</h2>
+                <pre id="extractedTables"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="apiKeyModal" class="modal">
+        <div class="modal-content">
+            <h2 id="apiKeyModalTitle">API Key Settings</h2>
+            <label for="apiKeyInput" id="apiKeyLabel">Enter your Gemini API Key:</label>
+            <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeSettingsModal()">Cancel</button>
+                <button id="saveApiKeyButton" class="save-btn" onclick="saveApiKey()">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const fs = require('fs');
+        const path = require('path');
+
+        let geminiApiKey = "";
+        const MODEL_NAME = "gemini-1.5-flash-latest";
+
+        const S_TEXTS = {
+            en: {
+                appTitle: "Table extractor",
+                pageTitle: "Table extractor",
+                fileSizeWarning: "Large files may take longer to process , Please be patient.",
+                fileInputLabel: "Choose PDF or Image File:",
+                extractButtonText: "Extract from File",
+                pasteImageButtonText: "Paste Image",
+                settingsButtonText: "Settings",
+                apiKeyModalTitle: "API Key Settings",
+                apiKeyLabel: "Enter your Gemini API Key:",
+                saveApiKeyButtonText: "Save Key",
+                copyButtonText: "Copy All Results",
+                downloadExcelButtonText: "Download Tables as Excel",
+                downloadWordButtonText: "Download as Word Doc",
+
+                specificInfoTitlePdf: "Extracted Document Information:",
+                tablesTitlePdf: "Extracted Tables (Markdown):",
+                specificInfoTitleImage: "Extracted Text from Image:",
+                tablesTitleImage: "Identified Tables (Markdown):",
+
+                noFileChosen: "No file chosen",
+                statusApiKeyError: "Error: API Key is not set or invalid. Please set a valid Gemini API key in Settings.",
+                statusApiKeyMissing: "API Key is missing. Please set it in Settings before proceeding.",
+                statusSelectFile: "Please choose a file first.",
+                statusInvalidFile: "The selected file type is not supported. Please choose a PDF or a common image format (PNG, JPG, WEBP, GIF).",
+                statusFileSizeLarge: (size, limit, type) => `${type} size (${size}MB) is large. Recommended max is ${limit}MB. Processing may take a long time or fail.`,
+                statusReadingFile: "Reading and preparing file...",
+                statusSendingToGemini: "This may take some time.",
+                statusApiError: (status, statusText, details) => `API Error: ${status} ${statusText}. ${details ? 'Details: ' + details : ''}`,
+                statusDataExtracted: "Data extracted successfully!",
+                statusNoStructuredData: "Failed to receive structured data from API. The response might be empty or not in the expected format.",
+                statusBlockedResponse: (reason, ratings) => `Request was blocked by API due to: ${reason}. ${ratings ? 'Safety Ratings: ' + ratings : ''}`,
+                statusGenericError: (message) => `An error occurred: ${message}`,
+                statusCopied: "Copied!",
+                statusCopyError: "Failed to copy text. Check Console.",
+                statusNoTextToCopy: "No text to copy.",
+                statusExcelDownloaded: "Excel downloaded!",
+                statusNoTableDataForExcel: "No table data to convert to Excel.",
+                statusExcelError: (message) => `Error creating Excel file: ${message}`,
+                statusWordDownloaded: "Word document downloaded!",
+                statusWordError: (message) => `Error creating Word file: ${message}`,
+                statusNoContentForWord: "No content to include in Word document.",
+                statusGeneratingWord: "Generating Word document...",
+
+                specificInfoNotFound: "The 'Specific Information' section was not found or is empty in the API response.",
+                tablesNotFoundInDoc: "No tables found in the document/image or not identified by the API.",
+                tablesSectionNotFound: "The 'Tables' section was not found or is empty in the API response.",
+
+                pdfSpecificInfoMarker: "### Extracted Document Information:",
+                pdfTablesMarker: "### Extracted Tables:",
+                imageExtractedTextMarker: "### Extracted Text from Image:",
+                imageTablesMarker: "### Identified Tables (Markdown):",
+
+                noTablesFoundInMarkdown: "no tables found",
+                pastingNotSupported: "Pasting images is not supported by your browser or an error occurred.",
+                noImageInClipboard: "No image found in clipboard. Please copy an image first.",
+                processingPastedImage: "Processing pasted image...",
+                apiKeySaved: "API Key saved successfully!",
+                apiKeySaveError: "Could not save API Key.",
+                apiUsageInfoText: () => ``,
+                operationCancelled: 'Operation cancelled by user.',
+                ipcNotAvailableError: "File saving features are unavailable. This tool must be run within Electron.",
+                openExcelPrompt: 'Do you want to open the Excel file now?'
+            }
+        };
+
+        const currentLang = 'en';
+
+        function S_T(key, ...args) {
+            let textData = S_TEXTS[currentLang] || S_TEXTS.en;
+            let text = textData[key] || key;
+            if (typeof text === 'function') {
+                return text(...args);
+            }
+            return text;
+        }
+
+        function applyStaticTexts() {
+            document.getElementById('appTitle').textContent = S_T('appTitle');
+            document.getElementById('pageTitle').textContent = S_T('pageTitle');
+            document.getElementById('settingsButtonText').textContent = S_T('settingsButtonText');
+            document.getElementById('fileSizeWarningText').textContent = S_T('fileSizeWarning');
+            document.getElementById('fileInputLabel').textContent = S_T('fileInputLabel');
+            document.getElementById('extractButtonText').textContent = S_T('extractButtonText');
+            document.getElementById('pasteImageButtonText').textContent = S_T('pasteImageButtonText');
+            document.getElementById('copyButtonText').textContent = S_T('copyButtonText');
+            document.getElementById('downloadExcelButtonText').textContent = S_T('downloadExcelButtonText');
+            document.getElementById('downloadWordButtonText').textContent = S_T('downloadWordButtonText');
+            document.getElementById('apiKeyModalTitle').textContent = S_T('apiKeyModalTitle');
+            document.getElementById('apiKeyLabel').textContent = S_T('apiKeyLabel');
+            document.getElementById('saveApiKeyButton').textContent = S_T('saveApiKeyButtonText');
+            fileInput.setAttribute('data-file-name', S_T('noFileChosen'));
+
+            const apiUsageDiv = document.getElementById('apiUsageIndicator');
+            apiUsageDiv.innerHTML = S_T('apiUsageInfoText');
+            apiUsageDiv.style.display = geminiApiKey ? 'block' : 'none';
+        }
+
+        const fileInput = document.getElementById('fileInput');
+        const statusContainer = document.getElementById('statusContainer');
+        const statusText = document.getElementById('statusText');
+        const loader = document.getElementById('loader');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const specificInfoDiv = document.getElementById('specificInfo');
+        const specificInfoSection = document.getElementById('specificInfoSection');
+        const tablesSection = document.getElementById('tablesSection');
+        const extractedTablesDiv = document.getElementById('extractedTables');
+        const extractButton = document.getElementById('extractButton');
+        const pasteImageButton = document.getElementById('pasteImageButton');
+        const copyButton = document.getElementById('copyButton');
+        const downloadExcelButton = document.getElementById('downloadExcelButton');
+        const downloadWordButton = document.getElementById('downloadWordButton');
+        const apiKeyModal = document.getElementById('apiKeyModal');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const apiUsageIndicatorDiv = document.getElementById('apiUsageIndicator');
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                this.setAttribute('data-file-name', this.files[0].name);
+            } else {
+                this.setAttribute('data-file-name', S_T('noFileChosen'));
+            }
+        });
+
+        function loadApiKey() {
+            const storedKey = localStorage.getItem('geminiApiKey');
+            if (storedKey) {
+                geminiApiKey = storedKey;
+                apiKeyInput.value = storedKey;
+                apiUsageIndicatorDiv.style.display = 'block';
+            } else {
+                apiUsageIndicatorDiv.style.display = 'none';
+            }
+        }
+
+        function openSettingsModal() {
+            apiKeyInput.value = geminiApiKey;
+            apiKeyModal.style.display = "block";
+        }
+        function closeSettingsModal() { apiKeyModal.style.display = "none"; }
+
+        function saveApiKey() {
+            const newKey = apiKeyInput.value.trim();
+            if (newKey) {
+                geminiApiKey = newKey;
+                localStorage.setItem('geminiApiKey', newKey);
+                updateStatus("apiKeySaved", "success");
+                apiUsageIndicatorDiv.style.display = 'block';
+                closeSettingsModal();
+            } else {
+                updateStatus("apiKeySaveError", "error");
+                apiUsageIndicatorDiv.style.display = 'none';
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == apiKeyModal) closeSettingsModal();
+        }
+
+        function checkApiKey() {
+            if (!geminiApiKey || geminiApiKey.trim() === "") {
+                updateStatus("statusApiKeyMissing", "error");
+                openSettingsModal();
+                return false;
+            }
+            if (!geminiApiKey.startsWith("AIzaSy")) { // Basic check
+                 updateStatus("statusApiKeyError", "warning");
+            }
+            return true;
+        }
+
+        function updateStatus(messageKey, type, showLoader = false, ...args) {
+            console.log(`Status Update: ${messageKey} (type: ${type}, loader: ${showLoader})`, args);
+            if (messageKey) {
+                statusText.textContent = S_T(messageKey, ...args);
+                statusContainer.className = `status-container status-${type}`;
+                statusContainer.style.display = 'flex';
+            } else {
+                statusText.textContent = '';
+                statusContainer.style.display = 'none';
+            }
+            loader.style.display = showLoader ? 'block' : 'none';
+        }
+
+        async function processUploadedFile() {
+            if (!checkApiKey()) return;
+            if (fileInput.files.length === 0) {
+                updateStatus("statusSelectFile", "warning");
+                return;
+            }
+            processFile(fileInput.files[0]);
+        }
+
+        async function handlePasteImageClick() {
+            if (!checkApiKey()) return;
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.read) {
+                    updateStatus("pastingNotSupported", "error"); return;
+                }
+                updateStatus("processingPastedImage", "processing", true);
+                const clipboardItems = await navigator.clipboard.read();
+                let imageFile = null;
+                for (const item of clipboardItems) {
+                    for (const type of item.types) {
+                        if (type.startsWith("image/")) {
+                            const blob = await item.getType(type);
+                            imageFile = new File([blob], "pasted_image." + type.split('/')[1], { type });
+                            break;
+                        }
+                    }
+                    if (imageFile) break;
+                }
+                if (imageFile) processFile(imageFile);
+                else updateStatus("noImageInClipboard", "warning");
+            } catch (err) {
+                console.error("Error reading from clipboard:", err);
+                updateStatus("pastingNotSupported", "error", false, err.message);
+            }
+        }
+
+        async function processFile(file) {
+            if (!file) { updateStatus("statusSelectFile", "warning"); return; }
+
+            const allowedMimeTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"];
+            if (!allowedMimeTypes.includes(file.type)) {
+                updateStatus("statusInvalidFile", "error"); return;
+            }
+
+            const isPdf = file.type === "application/pdf";
+            const fileSizeMB = file.size / 1024 / 1024;
+            const sizeLimit = isPdf ? 20 : 4; // Higher limit for PDF
+            const fileTypeString = isPdf ? "PDF" : "Image";
+
+            if (fileSizeMB > sizeLimit) {
+                 updateStatus("statusFileSizeLarge", "warning", true, fileSizeMB.toFixed(1), sizeLimit, fileTypeString);
+            }
+
+            [extractButton, pasteImageButton, copyButton, downloadExcelButton, downloadWordButton].forEach(btn => btn.disabled = true);
+            resultsContainer.style.display = 'none';
+            specificInfoDiv.textContent = ''; specificInfoSection.style.display = 'none';
+            extractedTablesDiv.textContent = ''; tablesSection.style.display = 'none';
+            updateStatus("statusReadingFile", "processing", true);
+
+            try {
+                const base64Data = await fileToBase64(file);
+                const pureBase64 = base64Data.substring(base64Data.indexOf(',') + 1);
+                updateStatus("statusSendingToGemini", "processing", true);
+
+                const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${geminiApiKey}`;
+                let promptText = "";
+                if (isPdf) {
+                    promptText = `
+You are an expert assistant for analyzing PDF documents and extracting data.
+Task: Analyze the attached PDF and extract all relevant information and tables.
+1.  **Specific Document Information:**
+    *   Identify and extract key details like Invoice Number, Invoice Date, Total Amount, Vendor Name, Customer Name, Due Date, etc. If specific fields are not found, state "Not available".
+    *   Present these findings as clear key-value pairs.
+    *   Use the heading: "${S_T('pdfSpecificInfoMarker')}"
+2.  **All Tables:**
+    *   Extract all tables found within the document.
+    *   Format each extracted table clearly using Markdown table syntax.
+    *   If no tables are found, state: "${S_T('tablesNotFoundInDoc')}"
+    *   Use the heading: "${S_T('pdfTablesMarker')}"
+
+Output should be strictly structured using the specified headings. Do not include any additional introductory or concluding remarks outside these sections. Focus on accurate and complete data extraction.`;
+                } else { // Image
+                    promptText = `
+You are an expert image analyzer.
+Task: Analyze the attached image and extract:
+1.  **Extracted Text:**
+    *   Extract all discernible text from the image, preserving line breaks where natural. If no text is found, state "No text found in image".
+    *   Use the heading: "${S_T('imageExtractedTextMarker')}"
+2.  **Tables:**
+    *   If any tabular data exists in the image, extract it and format each table using clear Markdown table syntax.
+    *   If no tables are found, state: "${S_T('tablesNotFoundInDoc')}"
+    *   Use the heading: "${S_T('imageTablesMarker')}"
+
+Output should be strictly structured using the specified headings. Do not include any additional introductory or concluding remarks outside these sections. Focus on accurate and complete data extraction.`;
+                }
+
+                const requestBody = {
+                    "contents": [{"parts": [{ "text": promptText },{ "inline_data": { "mime_type": file.type, "data": pureBase64 }}]}],
+                    "generationConfig": { "temperature": 0.1, "maxOutputTokens": 8192 }
+                };
+
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("API Error Response:", errorData);
+                    let detailedError = errorData.error?.message || JSON.stringify(errorData.error || errorData);
+                    throw new Error(S_T('statusApiError', response.status, response.statusText, detailedError));
+                }
+
+                const responseData = await response.json();
+                console.log("Gemini API Response:", responseData);
+
+                if (responseData.candidates && responseData.candidates.length > 0 &&
+                    responseData.candidates[0].content && responseData.candidates[0].content.parts &&
+                    responseData.candidates[0].content.parts.length > 0 &&
+                    responseData.candidates[0].content.parts[0].text) {
+
+                    const fullExtractedText = responseData.candidates[0].content.parts[0].text;
+                    const specificInfoMarkerText = isPdf ? S_T('pdfSpecificInfoMarker') : S_T('imageExtractedTextMarker');
+                    const tablesMarkerText = isPdf ? S_T('pdfTablesMarker') : S_T('imageTablesMarker');
+
+                    document.getElementById('specificInfoTitle').textContent = isPdf ? S_T('specificInfoTitlePdf') : S_T('specificInfoTitleImage');
+                    document.getElementById('tablesTitle').textContent = isPdf ? S_T('tablesTitlePdf') : S_T('tablesTitleImage');
+
+                    let specificInfoContent = "";
+                    let tablesContent = "";
+                    const specificInfoStartIndex = fullExtractedText.indexOf(specificInfoMarkerText);
+                    const tablesStartIndex = fullExtractedText.indexOf(tablesMarkerText);
+
+                    if (specificInfoStartIndex !== -1) {
+                        const endOfSpecificInfo = (tablesStartIndex !== -1 && tablesStartIndex > specificInfoStartIndex) ? tablesStartIndex : fullExtractedText.length;
+                        specificInfoContent = fullExtractedText.substring(specificInfoStartIndex + specificInfoMarkerText.length, endOfSpecificInfo).trim();
+                    }
+                    if (tablesStartIndex !== -1) {
+                        tablesContent = fullExtractedText.substring(tablesStartIndex + tablesMarkerText.length).trim();
+                    }
+
+                    specificInfoDiv.textContent = specificInfoContent || S_T('specificInfoNotFound');
+                    specificInfoSection.style.display = 'block';
+
+                    if (tablesContent) {
+                        extractedTablesDiv.textContent = (tablesContent.toLowerCase().includes(S_T('tablesNotFoundInDoc').toLowerCase().substring(0,10)) ||
+                                                          tablesContent.toLowerCase().includes(S_T('noTablesFoundInMarkdown').toLowerCase()))
+                                                         ? S_T('tablesNotFoundInDoc') : tablesContent;
+                    } else {
+                        extractedTablesDiv.textContent = S_T('tablesSectionNotFound');
+                    }
+                    tablesSection.style.display = 'block';
+
+                    resultsContainer.style.display = 'block';
+                    updateStatus("statusDataExtracted", "success", false);
+                    copyButton.disabled = false;
+                    const hasContentForWord = specificInfoContent || (tablesContent && !tablesContent.toLowerCase().includes(S_T('tablesNotFoundInDoc').toLowerCase()));
+                    downloadWordButton.disabled = !hasContentForWord;
+
+                    const hasTableContent = tablesContent &&
+                                            !tablesContent.toLowerCase().includes(S_T('tablesNotFoundInDoc').toLowerCase().substring(0,10)) &&
+                                            !tablesContent.toLowerCase().includes(S_T('noTablesFoundInMarkdown').toLowerCase()) &&
+                                            tablesContent.trim() !== "";
+                    downloadExcelButton.disabled = !hasTableContent;
+
+                } else {
+                    console.warn("Response data structure unexpected or empty:", responseData);
+                    let blockReason = responseData.promptFeedback?.blockReason || "Unknown reason, empty or malformed response from API.";
+                    let safetyRatingsStr = responseData.promptFeedback?.safetyRatings ? JSON.stringify(responseData.promptFeedback.safetyRatings) : "";
+                    updateStatus("statusBlockedResponse", "error", false, blockReason, safetyRatingsStr);
+                    specificInfoDiv.textContent = S_T("statusBlockedResponse", blockReason, safetyRatingsStr);
+                    specificInfoSection.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error("Error in processFile:", error);
+                updateStatus("statusGenericError", "error", false, error.message);
+                specificInfoDiv.textContent = `${S_T('statusGenericError', error.message)}\nCheck Console.`;
+                specificInfoSection.style.display = 'block';
+            } finally {
+                extractButton.disabled = false; pasteImageButton.disabled = false;
+                const currentStatusClass = statusContainer.className;
+                if (loader.style.display === 'block' && (currentStatusClass.includes('status-processing') || currentStatusClass.includes('status-warning'))) {
+                     loader.style.display = 'none';
+                     if (currentStatusClass.includes('status-warning') && !statusText.textContent.toLowerCase().includes('error')) {
+                         updateStatus('', '', false);
+                     }
+                }
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function copyToClipboard() {
+            const specificInfoTitleText = document.getElementById('specificInfoTitle').textContent;
+            const tablesTitleText = document.getElementById('tablesTitle').textContent;
+            const specificInfoText = specificInfoDiv.textContent;
+            const tablesText = extractedTablesDiv.textContent;
+            const copyButtonSpan = document.getElementById('copyButtonText');
+            const originalButtonText = S_T('copyButtonText');
+
+            let fullTextToCopy = "";
+            if (specificInfoSection.style.display !== 'none' && specificInfoText.trim() && !specificInfoText.includes(S_T('specificInfoNotFound'))) {
+                fullTextToCopy += specificInfoTitleText + "\n" + specificInfoText + "\n\n";
+            }
+            if (tablesSection.style.display !== 'none' && tablesText.trim() && !tablesText.includes(S_T('tablesNotFoundInDoc')) && !tablesText.includes(S_T('tablesSectionNotFound'))) {
+                fullTextToCopy += tablesTitleText + "\n" + tablesText;
+            }
+
+            if (!fullTextToCopy.trim()) { updateStatus("statusNoTextToCopy", "warning"); return; }
+
+            navigator.clipboard.writeText(fullTextToCopy.trim()).then(() => {
+                copyButtonSpan.textContent = S_T('statusCopied');
+                updateStatus("statusCopied", "success");
+                setTimeout(() => {
+                    copyButtonSpan.textContent = originalButtonText;
+                    if (statusContainer.classList.contains('status-success') && statusText.textContent === S_T('statusCopied')) {
+                         updateStatus("statusDataExtracted", "success");
+                    } else if (!statusContainer.classList.contains('status-error')){
+                         updateStatus('', '', false);
+                    }
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                updateStatus("statusCopyError", "error");
+            });
+        }
+
+        async function downloadAsExcel() {
+            if (!ipcRenderer) {
+                updateStatus("ipcNotAvailableError", "error");
+                console.error("ipcRenderer not available for Excel download.");
+                return;
+            }
+            const markdownText = extractedTablesDiv.textContent;
+            const downloadButtonSpan = document.getElementById('downloadExcelButtonText');
+            const originalButtonText = S_T('downloadExcelButtonText');
+
+            if (!markdownText || markdownText.trim() === '' ||
+                markdownText.toLowerCase().includes(S_T('tablesNotFoundInDoc').toLowerCase()) ||
+                markdownText.toLowerCase().includes(S_T('noTablesFoundInMarkdown').toLowerCase()) ||
+                markdownText.toLowerCase().includes(S_T('tablesSectionNotFound').toLowerCase())) {
+                updateStatus("statusNoTableDataForExcel", "warning"); return;
+            }
+
+            try {
+                const lines = markdownText.split('\n');
+                const tablesData = []; let currentTable = []; let inTableContext = false;
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (line.startsWith('|') && line.endsWith('|')) {
+                        // Check if it's a markdown table separator line (like |---|---|)
+                        if (line.replace(/\|/g, '').replace(/-/g, '').trim() === '') {
+                             // This is a separator line, skip it for data but mark context
+                             inTableContext = true; return;
+                        }
+                        const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
+                        if (cells.length > 0) {
+                            currentTable.push(cells);
+                            inTableContext = true;
+                        }
+                    } else {
+                        if (inTableContext && currentTable.length > 0) {
+                            tablesData.push([...currentTable]);
+                            currentTable = [];
+                        }
+                        inTableContext = false; // Reset context if line doesn't look like a table part
+                    }
+                });
+                // Add any remaining table at the end
+                if (currentTable.length > 0) tablesData.push([...currentTable]);
+
+                if (tablesData.length === 0 || tablesData.every(table => table.length === 0)) {
+                    updateStatus("statusNoTableDataForExcel", "warning"); return;
+                }
+
+                // Filter out empty rows or separator lines that might have slipped in
+                const cleanTablesData = tablesData.map(tableAoA => tableAoA.filter(row => !row.every(cell => cell.replace(/-/g, '').trim() === ''))).filter(table => table.length > 0);
+                if (cleanTablesData.length === 0) { updateStatus("statusNoTableDataForExcel", "warning"); return; }
+
+
+                const outputFilePath = await ipcRenderer.invoke('dialog:saveFile', {
+                    title: 'Save Excel File',
+                    filters: [{ name: 'Excel Files', extensions: ['xlsx'] }],
+                    defaultPath: `extracted_tables_${Date.now()}.xlsx`
+                });
+                if (!outputFilePath) { updateStatus('operationCancelled', 'warning'); return; }
+
+
+                const result = await ipcRenderer.invoke('excel:writeTablesFile', { tables: cleanTablesData, outputFilePath });
+                if (result && result.success) {
+                    downloadButtonSpan.textContent = S_T('statusExcelDownloaded');
+                    updateStatus("statusExcelDownloaded", "success");
+
+                    // Ask if user wants to open the Excel file
+                    if (confirm(S_T('openExcelPrompt'))) {
+                        ipcRenderer.invoke('shell:openPath', outputFilePath)
+                            .then(openResult => {
+                                if (openResult) {
+                                    console.error('Error opening file:', openResult);
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Error opening file:', err);
+                            });
+                    }
+
+                    setTimeout(() => {
+                        downloadButtonSpan.textContent = originalButtonText;
+                        if (statusContainer.classList.contains('status-success') && statusText.textContent === S_T('statusExcelDownloaded')) {
+                             updateStatus("statusDataExtracted", "success");
+                        } else if (!statusContainer.classList.contains('status-error')){
+                             updateStatus('', '', false);
+                        }
+                    }, 2000);
+                } else {
+                    throw new Error(result ? result.error : 'Failed to create Excel file due to unknown IPC error.');
+                }
+            } catch (e) {
+                console.error("Error creating Excel file:", e);
+                updateStatus("statusExcelError", "error", false, e.message);
+            }
+        }
+
+        async function downloadAsWord() {
+            if (!ipcRenderer) {
+                updateStatus("ipcNotAvailableError", "error");
+                console.error("ipcRenderer not available for Word download.");
+                return;
+            }
+            if (!checkApiKey()) return;
+
+            const specificInfoContent = specificInfoDiv.textContent;
+            const tablesContentMarkdown = extractedTablesDiv.textContent;
+            const downloadWordButtonSpan = document.getElementById('downloadWordButtonText');
+            const originalWordButtonText = S_T('downloadWordButtonText');
+
+            let combinedContentForPrompt = "";
+            // Conditionally add content if it exists and isn't a "not found" message
+            if (specificInfoContent && !specificInfoContent.includes(S_T('specificInfoNotFound')) && specificInfoSection.style.display !== 'none') {
+                combinedContentForPrompt += `${document.getElementById('specificInfoTitle').textContent}\n${specificInfoContent}\n\n`;
+            }
+            if (tablesContentMarkdown && !tablesContentMarkdown.includes(S_T('tablesNotFoundInDoc')) && !tablesContentMarkdown.includes(S_T('tablesSectionNotFound')) && tablesSection.style.display !== 'none') {
+                combinedContentForPrompt += `${document.getElementById('tablesTitle').textContent}\n${tablesContentMarkdown}`;
+            }
+
+            if (!combinedContentForPrompt.trim()) { updateStatus("statusNoContentForWord", "warning"); return; }
+
+            downloadWordButton.disabled = true;
+            updateStatus("statusGeneratingWord", "processing", true);
+
+            try {
+                const wordPrompt = `
+Based on the following extracted text, reformat it into a coherent document (a "paper" or "report") suitable for saving as a Word file.
+The goal is to produce text that can be directly used in a Word document, with good formatting.
+- If the text contains structured information (like document details) followed by tables, present the information first, then the tables. Tables should be clearly formatted using Markdown.
+- If the text is primarily a large block of text, format it as a readable report with clear paragraphs.
+- If the input consists mainly of one or more tables, present these tables clearly.
+- Focus on the output being ready for a document. Avoid conversational additions or comments not part of the actual document content.
+- Ensure the final output is a single block of text.
+
+Extracted text is:
+---
+${combinedContentForPrompt}
+---
+`;
+                const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${geminiApiKey}`;
+                const requestBody = {
+                    "contents": [{"parts": [{ "text": wordPrompt }]}],
+                    "generationConfig": { "temperature": 0.2, "maxOutputTokens": 8192 }
+                };
+
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Word Gen API Error:", errorData);
+                    throw new Error(S_T('statusApiError', response.status, response.statusText, errorData.error?.message || JSON.stringify(errorData.error || errorData)));
+                }
+
+                const responseData = await response.json();
+                console.log("Gemini Word Gen Response:", responseData);
+
+                if (responseData.candidates && responseData.candidates[0].content && responseData.candidates[0].content.parts[0].text) {
+                    const geminiFormattedDocumentText = responseData.candidates[0].content.parts[0].text;
+                    let defaultFileName = "extracted_document.docx";
+                    if (fileInput.files.length > 0) {
+                        const originalName = fileInput.files[0].name;
+                        defaultFileName = originalName.substring(0, originalName.lastIndexOf('.') || originalName.length) + "_document.docx";
+                    } else { // If pasted image, suggest a generic name
+                        defaultFileName = `pasted_image_document_${Date.now()}.docx`;
+                    }
+
+
+                    const result = await ipcRenderer.invoke('word:generateAndSave', {
+                        documentContent: geminiFormattedDocumentText,
+                        defaultPathSuggestion: defaultFileName
+                    });
+
+                    if (result && result.success) {
+                        downloadWordButtonSpan.textContent = S_T('statusWordDownloaded');
+                        updateStatus("statusWordDownloaded", "success");
+                        setTimeout(() => {
+                            downloadWordButtonSpan.textContent = originalWordButtonText;
+                            if (statusContainer.classList.contains('status-success') && statusText.textContent === S_T('statusWordDownloaded')) {
+                                updateStatus("statusDataExtracted", "success");
+                            } else if (!statusContainer.classList.contains('status-error')){
+                                updateStatus('', '', false);
+                            }
+                        }, 2500);
+                    } else {
+                        throw new Error(result ? result.error : S_T('statusWordError', 'Unknown IPC error during Word save.'));
+                    }
+                } else {
+                    let blockReason = responseData.promptFeedback?.blockReason || "Empty response from API for Word generation";
+                    let safetyRatingsStr = responseData.promptFeedback?.safetyRatings ? JSON.stringify(responseData.promptFeedback.safetyRatings) : "";
+                    console.error("Word Gen Blocked/Empty:", responseData);
+                    throw new Error(S_T("statusBlockedResponse", blockReason, safetyRatingsStr));
+                }
+            } catch (error) {
+                console.error("Error generating Word document:", error);
+                updateStatus("statusWordError", "error", false, error.message);
+            } finally {
+                downloadWordButton.disabled = false;
+                if (statusText.textContent === S_T("statusGeneratingWord")) { // Only hide loader if it was for this op
+                    loader.style.display = 'none';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApiKey();
+            applyStaticTexts();
+            if (!ipcRenderer) {
+                updateStatus("ipcNotAvailableError", "error");
+                // Disable file saving buttons if IPC is not available
+                downloadExcelButton.disabled = true;
+                downloadWordButton.disabled = true;
+            }
+            if (!geminiApiKey || geminiApiKey.trim() === "") {
+                updateStatus("statusApiKeyMissing", "warning");
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+{
+  "name": "HOPE-Doc",
+  "productName": "HOPE-Doc",
+  "version": "2.4.5"
+  "description": "HOPE-Doc - Application Launcher",
+  "main": "electron-app.js",
+  "scripts": {
+    "start": "electron .",
+    "start:optimized": "electron . --disable-renderer-backgrounding --disable-gpu-sandbox --disable-gpu --no-sandbox --disk-cache-size=0 --max-old-space-size=4096",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:portable": "electron-builder --win portable",
+    "dist:all": "electron-builder --win",
+    "publish": "electron-builder -p always"
+  },
+  "keywords": [],
+  "author": "a7medlhddad@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12",
+    "docx": "^8.5.0",
+    "dotenv": "^16.5.0",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.6.2",
+    "electron-window-state": "^1.0.9",
+    "exceljs": "^4.4.0",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.15.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^29.1.5",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.aramex.hope-doc",
+    "productName": "HOPE-Doc",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ahmedalhddad",
+        "repo": "HOPE-DOC",
+        "private": true,
+        "token": "process.env.GH_TOKEN"
+      }
+    ],
+    "files": [
+      "*.js",
+      "*.html",
+      "create-dummy-ffmpeg.js",
+      "MOH_tools_2.html",
+      "OFOQ_1_2.html",
+      "UPLOAD_REQUESTED.html",
+      "ZARA_SHIPMENT.html",
+      "Smart_PDF_Data_Extractor_2.html",
+      "shortcuts-config.html",
+      "AI.html",
+      "assets/**/*",
+      "data/**/*",
+      "styles.css",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icons/icon.png",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "requestedExecutionLevel": "asInvoker",
+      "verifyUpdateCodeSignature": false,
+      "signAndEditExecutable": false,
+      "signDlls": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "HOPE-Doc",
+      "runAfterFinish": false,
+      "allowElevation": false,
+      "perMachine": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "asar": true,
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "removePackageKeywords": true
+  }
+}

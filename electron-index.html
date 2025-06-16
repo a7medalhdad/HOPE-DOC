@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPE</title>
+    <style>
+        /* Basic app styling */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        
+        :root {
+            --bg-color: #141824; 
+            --surface-color: #1e2434; 
+            --primary-color: #4f88ff; 
+            --secondary-color: #ff6d92; 
+            --accent-color: #ffb356; 
+            --text-color: #e1e7fa; 
+            --card-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            --transition-speed: 0.3s;
+        }
+        
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            direction: ltr;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(160deg, var(--surface-color) 0%, var(--bg-color) 100%);
+        }
+        
+        header {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background-color: rgba(0,0,0,0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        header h1 {
+            font-size: 1.7rem;
+            margin: 0;
+            color: var(--primary-color);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        footer {
+            padding: 10px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.9em;
+            background-color: rgba(0,0,0,0.1);
+        }
+        
+        #footer-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        .tool-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(5px);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-color: rgba(79, 136, 255, 0.3);
+        }
+        
+        .tool-card-active {
+            background: linear-gradient(135deg, rgba(79, 136, 255, 0.15) 0%, rgba(79, 136, 255, 0.05) 100%);
+            border-color: rgba(79, 136, 255, 0.3);
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .tool-link {
+            text-align: center;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tool-icon-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            height: 80px;
+        }
+        
+        .tool-link img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            transition: transform var(--transition-speed) ease;
+        }
+        
+        .tool-link img.fallback-icon {
+            padding: 5px;
+            background-color: rgba(79, 136, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .tool-card:hover .tool-link img {
+            transform: scale(1.1);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        
+        .tool-link h3 {
+            margin: 5px 0;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .tool-link p {
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            main {
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .tool-card {
+                width: 180px;
+                padding: 15px 10px;
+            }
+            
+            .tool-link img {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 10px;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Medium screens */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .tool-card {
+                width: 200px;
+            }
+            
+            .tool-link img {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        /* Large screens */
+        @media (min-width: 1024px) {
+            .tool-card {
+                width: 220px;
+            }
+            
+            .tool-link img {
+                width: 70px;
+                height: 70px;
+            }
+        }
+        
+        /* Very large screens */
+        @media (min-width: 1600px) {
+            main {
+                max-width: 1400px;
+                margin: 0 auto;
+                gap: 30px;
+            }
+            
+            .tool-card {
+                width: 240px;
+            }
+            
+            .tool-icon-container {
+                height: 100px;
+            }
+            
+            .tool-link img {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .tool-link h3 {
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
+            
+            .tool-link p {
+                font-size: 0.95rem;
+            }
+        }
+        
+        /* Extra large screens */
+        @media (min-width: 2200px) {
+            .container {
+                max-width: 2000px;
+                margin: 0 auto;
+            }
+            
+            main {
+                max-width: 1800px;
+                gap: 40px;
+                padding: 40px;
+            }
+            
+            .tool-card {
+                width: 280px;
+            }
+            
+            .tool-icon-container {
+                height: 120px;
+            }
+            
+            .tool-link img {
+                width: 90px;
+                height: 90px;
+            }
+        }
+        
+        /* Ripple effect on click */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple:after {
+            content: "";
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.3) 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.8s;
+        }
+        
+        .ripple:active:after {
+            transform: scale(0, 0);
+            opacity: 0.3;
+            transition: 0s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="overflow: visible !important;">
+        <header>
+            <h1>HOPE</h1>
+        </header>
+        <main id="tools-grid" style="overflow: visible !important;">
+            <!-- Tool buttons embedded directly in HTML -->
+            <div class="tool-card ripple" data-file="MOH_tools_2.html">
+                <div class="tool-link">
+                    <div class="tool-icon-container">
+                        <img src="assets/icons/moh_tool_icon.png" alt="PDF&ZIP" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+UDwvdGV4dD48L2c+PC9zdmc+'; this.classList.add('fallback-icon');">
+                    </div>
+                    <h3>PDF&ZIP</h3>
+                    <p>Extract, split and manage files</p>
+                </div>
+            </div>
+            
+            <div class="tool-card ripple" data-file="OFOQ_1_2.html">
+                <div class="tool-link">
+                    <div class="tool-icon-container">
+                        <img src="assets/icons/ofoq_system_icon.png" alt="EX2XML" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+RTwvdGV4dD48L2c+PC9zdmc+'; this.classList.add('fallback-icon');">
+                    </div>
+                    <h3>EX2XML</h3>
+                    <p>Convert Excel files to OFOQ system</p>
+                </div>
+            </div>
+            
+            <div class="tool-card ripple" data-file="Smart_PDF_Data_Extractor_2.html">
+                <div class="tool-link">
+                    <div class="tool-icon-container">
+                        <img src="assets/icons/pdf_extractor_icon.png" alt="PDF2EX" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+UDwvdGV4dD48L2c+PC9zdmc+'; this.classList.add('fallback-icon');">
+                    </div>
+                    <h3>PDF2EX</h3>
+                    <p>Extract data from PDF files</p>
+                </div>
+            </div>
+            
+            <div class="tool-card ripple" data-file="UPLOAD_REQUESTED.html">
+                <div class="tool-link">
+                    <div class="tool-icon-container">
+                        <img src="assets/icons/upload_icon.png" alt="UPLOAD REQUESTED" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VTwvdGV4dD48L2c+PC9zdmc+'; this.classList.add('fallback-icon');">
+                    </div>
+                    <h3>UPLOAD REQUESTED</h3>
+                    <p>Convert Excel files to OFOQ system for permits only</p>
+                </div>
+            </div>
+            
+            <div class="tool-card ripple" data-file="AI_Excel_Processor.html" style="border: 5px solid red !important; background-color: yellow !important; color: black !important; display: block !important; visibility: visible !important; opacity: 1 !important; width: auto !important; height: auto !important; min-width: 150px !important; min-height: 150px !important; padding: 10px !important; z-index: 9999 !important; animation: none !important;">
+                <div class="tool-link">
+                    <div class="tool-icon-container">
+                        <img src="assets/icons/AI.png.png" alt="AI Tool" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+QUk8L3RleHQ+PC9nPjwvc3ZnPg=='; this.classList.add('fallback-icon');">
+                    </div>
+                    <h3 style="color: black !important; font-weight: bold !important;">AI Tool (5TH POSITION)</h3>
+                    <p style="color: black !important;">Process Excel files with AI</p>
+                </div>
+            </div>
+            <div class="tool-card ripple" data-file="ZARA_SHIPMENT.html">
+                <div class="tool-link">
+                    <div class="tool-icon-container">
+                        <img src="assets/icons/zara_icon.png" alt="ZARA SHIPMENT" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cmVjdCBmaWxsPSIjNGY4OGZmIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHRleHQgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjM1IiBmaWxsPSIjRkZGIiB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+WjwvdGV4dD48L2c+PC9zdmc+'; this.classList.add('fallback-icon');">
+                    </div>
+                    <h3>ZARA SHIPMENT</h3>
+                    <p>Special tool for ZARA shipments</p>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <img src="assets/icons/footer_icon.png" alt="App Icon" id="footer-icon">
+            <p>a7medlhddad@gmail.com - v2.4.4</p>
+        </footer>
+    </div>
+    <script>
+        // Inline script
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click events to tool cards
+            document.querySelectorAll('.tool-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // Visual effect on click
+                    this.classList.add('tool-card-active');
+                    
+                    // Add pulse effect to icon
+                    const img = this.querySelector('img');
+                    img.style.animation = 'pulse 0.5s ease';
+                    
+                    // Get filename from data attribute
+                    const file = this.getAttribute('data-file');
+                    
+                    // Open tool using IPC
+                    if (window.require) {
+                        const { ipcRenderer } = require('electron');
+                        ipcRenderer.send('open-tool', file);
+                    } else {
+                        console.log('Electron IPC not available');
+                        window.open(file, '_blank');
+                    }
+                    
+                    // Reset active state after animation
+                    setTimeout(() => {
+                        this.classList.remove('tool-card-active');
+                        img.style.animation = '';
+                    }, 500);
+                });
+            });
+            
+            // Add animation delay to cards for staggered entrance
+            document.querySelectorAll('.tool-card').forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+    <script src="updated-renderer.js"></script>
+</body>
+</html> 

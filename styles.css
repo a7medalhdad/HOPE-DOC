@@ -1,0 +1,294 @@
+:root {
+    --bg-color: #1a1b26; 
+    --surface-color: #24283b; 
+    --primary-color: #7aa2f7; 
+    --secondary-color: #ff6d92; /* New secondary for better contrast */
+    --accent-color: #ff9e64; 
+    --text-color: #c0caf5; 
+    --text-secondary-color: #a9b1d6; 
+    --border-color: #3b4261;
+    --success-color: #9ece6a; 
+    --error-color: #f7768e; 
+    --warning-color: #e0af68; 
+    --processing-color: var(--primary-color); 
+    --font-primary: 'Roboto', 'Segoe UI', sans-serif;
+    --card-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    --transition-speed: 0.15s; /* تسريع الانتقالات أكثر */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    direction: ltr;
+    /* تحسينات الأداء والحركة */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeSpeed;
+    will-change: auto;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+body {
+    padding-top: 30px; /* Space for drag region */
+}
+
+.drag-region {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px; /* The height of the draggable area */
+    z-index: 1000; /* Ensure it's on top */
+    -webkit-app-region: drag; /* This makes it draggable */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+header {
+    display: flex;
+    justify-content: center; /* Center title */
+    align-items: center;
+    padding: 15px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    position: relative; /* For button positioning */
+}
+
+header h1 {
+    font-size: clamp(1.5rem, 4vw, 1.8rem);
+    margin: 0;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+}
+
+#edit-tools-btn {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--surface-color);
+    color: var(--text-secondary-color);
+    border: 1px solid var(--border-color);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--transition-speed) ease;
+    /* تحسينات الأداء */
+    will-change: background-color, color, border-color;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#edit-tools-btn:hover {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    border-color: var(--primary-color);
+}
+
+.edit-mode #edit-tools-btn {
+    background-color: var(--success-color);
+    color: var(--bg-color);
+    border-color: var(--success-color);
+}
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: clamp(15px, 3vmin, 25px);
+    padding: clamp(15px, 3vmin, 25px);
+    overflow-y: auto; /* Allow scrolling ONLY if needed */
+    align-content: start;
+    /* تحسينات الأداء والحركة */
+    contain: layout style;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto; /* تسريع التمرير */
+    overscroll-behavior: contain;
+}
+
+footer {
+    padding: 15px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    font-size: clamp(0.8rem, 2vmin, 0.9rem);
+    color: var(--text-secondary-color);
+    flex-shrink: 0;
+}
+
+#footer-icon {
+    width: clamp(30px, 5vmin, 40px);
+    height: clamp(30px, 5vmin, 40px);
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+
+.tool-card {
+    background: var(--surface-color);
+    border-radius: 16px;
+    padding: clamp(15px, 3vmin, 20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    transition: transform var(--transition-speed) ease-out;
+    text-decoration: none;
+    position: relative;
+    aspect-ratio: 1 / 1.1;
+    /* تحسينات الأداء والحركة */
+    will-change: transform;
+    contain: layout style paint;
+    transform: translateZ(0);
+}
+
+.edit-mode .tool-card {
+    cursor: move;
+}
+
+.tool-card:hover {
+    transform: translateY(-3px) translateZ(0);
+    /* تخفيف تأثير الظل لتحسين الأداء */
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    border-color: var(--primary-color);
+}
+
+/* إزالة will-change بعد انتهاء الحركة */
+.tool-card:not(:hover) {
+    will-change: auto;
+}
+
+.tool-card-active {
+    transform: scale(0.95) translateZ(0);
+    transition-duration: 0.08s;
+}
+
+.tool-link {
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+    text-decoration: none;
+}
+
+.tool-link img {
+    width: clamp(50px, 10vmin, 70px);
+    height: clamp(50px, 10vmin, 70px);
+    margin-bottom: 15px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+    transition: transform var(--transition-speed) ease-out;
+    /* تحسينات الأداء والحركة */
+    will-change: auto;
+    image-rendering: optimizeSpeed;
+    transform: translateZ(0);
+}
+
+.tool-card:hover .tool-link img {
+    transform: scale(1.08);
+}
+
+.tool-link h3 {
+    margin: 5px 0;
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: clamp(1rem, 2.5vmin, 1.1rem);
+}
+
+.tool-link p {
+    margin: 5px 0 0;
+    font-size: clamp(0.8rem, 2vmin, 0.9rem);
+    color: var(--text-secondary-color);
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+    main {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+/* تحسينات إضافية للأداء (بدون GPU acceleration) */
+
+/* تحسين أداء التمرير */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* تقليل استخدام الذاكرة للصور */
+img {
+    content-visibility: auto;
+}
+
+/* تحسين أداء الرسوم المتحركة */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* تحسينات إضافية للأداء */
+.container {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+}
+
+/* تقليل repaint للعناصر الثابتة */
+header, footer {
+    contain: layout style;
+    will-change: auto;
+}
+
+/* CSS لتنسيق السكروول */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1e1e2f;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #5e5eff;
+  border-radius: 10px;
+  border: 2px solid #1e1e2f;
+}

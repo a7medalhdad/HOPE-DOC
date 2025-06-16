@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OFOQ XML</title>
+    <style>
+        /* ... (CSS styles remain the same as your "table view" version) ... */
+        :root {
+            /* Unified Color Palette */
+            --bg-color: #1a1b26;
+            --surface-color: #24283b;
+            --primary-color: #7aa2f7; /* Main theme blue */
+            --secondary-color: #bb9af7; /* Main theme purple */
+            --accent-color: #ff9e64; /* Main theme orange */
+            --text-color: #c0caf5;
+            --text-secondary-color: #a9b1d6;
+            --border-color: #3b4261;
+            --success-color: #9ece6a;
+            --error-color: #f7768e;
+            --warning-color: #e0af68;
+            --processing-color: var(--primary-color);
+            --font-primary: 'Roboto', 'Segoe UI', sans-serif;
+
+            /* Variables from original OFOQ, kept if not directly replaced or can be mapped */
+            --input-focus-border: var(--primary-color); /* Mapped to new primary */
+            --button-text-color: var(--bg-color); /* For contrast on colored buttons */
+
+            /* Table specific - will use new theme colors */
+            --table-header-bg: var(--surface-color); /* Darker surface for header */
+            --table-row-hover: #2f3545; /* Slightly lighter than surface-color */
+            --table-border-color: var(--border-color);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e2f; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background-color: #5e5eff; border-radius: 10px; border: 2px solid #1e1e2f; }
+
+        body {
+            font-family: var(--font-primary);
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color); /* Unified */
+            color: var(--text-color); /* Unified */
+            line-height: 1.6;
+            font-size: 16px;
+            padding-top: 30px; /* Push content down to avoid handle */
+        }
+        .container {
+            background-color: var(--surface-color); /* Unified */
+            padding: 30px 35px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            max-width: 950px;
+            margin: 20px auto;
+        }
+        h1 {
+            color: var(--primary-color); /* Unified */
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+        }
+        .form-section {
+            margin-bottom: 25px;
+            padding: 20px 25px;
+            background-color: var(--surface-color); /* Unified, same as container */
+            border: 1px solid var(--border-color); /* Unified */
+            border-radius: 8px;
+        }
+        .form-section h3 {
+            color: var(--primary-color); /* Unified */
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color); /* Unified */
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.95em;
+            color: var(--text-secondary-color); /* Unified */
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 18px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color); /* Unified */
+            background-color: var(--bg-color); /* Unified - darker inputs */
+            color: var(--text-color); /* Unified */
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--input-focus-border); /* This is var(--primary-color) now */
+            box-shadow: 0 0 0 3.5px rgba(122, 162, 247, 0.25); /* Focus ring with primary color */
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8) brightness(0.9); /* Adjusted for new theme, might need tweaking */
+            cursor: pointer;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 8px;
+            vertical-align: middle;
+            transform: scale(1.1);
+        }
+        label.inline-label {
+            font-weight: normal !important;
+            display: inline-flex !important;
+            align-items: center;
+            margin-left: 10px;
+            color: var(--text-color); /* Unified */
+            font-size: 0.95em;
+            margin-bottom: 0;
+        }
+
+        button { /* General button style */
+            color: var(--button-text-color); /* This is var(--bg-color) */
+            padding: 12px 28px;
+            border: 1px solid var(--border-color); /* Adding border for consistency */
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 600;
+            margin: 8px;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        button:hover:not(:disabled) { /* General hover */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        button:active:not(:disabled) { /* General active */
+            transform: translateY(0px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        #btnSave { background-color: var(--primary-color); border-color: var(--primary-color);}
+        #btnSave:hover { background-color: var(--secondary-color); border-color: var(--secondary-color); }
+
+        #btnOpenFile,
+        #btnClear {
+            background-color: var(--secondary-color); /* Changed from gray to secondary */
+            border-color: var(--secondary-color);
+        }
+        #btnOpenFile:hover,
+        #btnClear:hover {
+            background-color: var(--accent-color); /* Using accent for hover */
+            border-color: var(--accent-color);
+        }
+
+        #btnAddSingleReference {
+            background-color: var(--accent-color); /* Was green, now accent */
+            border-color: var(--accent-color);
+            padding: 10px 20px;
+            font-size: 0.95em;
+        }
+        #btnAddSingleReference:hover {
+            background-color: var(--warning-color); /* Using warning for hover */
+            border-color: var(--warning-color);
+        }
+        .remove-ref-btn-table {
+            background-color: var(--error-color); /* Unified danger/error */
+            border-color: var(--error-color);
+            padding: 6px 12px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .remove-ref-btn-table:hover {
+            background-color: #d65a6f; /* Darker shade of error-color */
+            border-color: #d65a6f;
+        }
+        .edit-ref-btn-table {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: var(--button-text-color);
+            padding: 6px 12px;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-right: 5px; /* Add some space between buttons */
+        }
+        .edit-ref-btn-table:hover {
+            background-color: #d99a4f; /* Darker shade of warning-color */
+            border-color: #d99a4f;
+        }
+        .button-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            margin-top: 10px;
+        }
+        .info-field {
+            background-color: var(--input-bg-color); /* Ensure this var is defined or map to existing like --bg-color */
+            color: var(--label-color); /* Ensure this var is defined or map to existing like --text-secondary-color */
+            cursor: default;
+            border: 1px solid var(--input-border-color); /* Ensure this var is defined or map to existing like --border-color */
+        }
+        hr {
+            margin: 30px 0;
+            border: 0;
+            border-top: 1px solid var(--border-color); /* Changed from separator-color */
+        }
+        .mig-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+        .mig-row > div {
+            flex: 1;
+            min-width: 250px;
+        }
+         .mig-row > div.full-width {
+             min-width: 100%;
+        }
+        .checkbox-container, .toggle-switch-container {
+            display: flex;
+            align-items: center;
+            padding-top: 30px;
+        }
+        .toggle-switch-container {
+            padding-top: 0;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        [data-tooltip] { position: relative; cursor: help; }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%; left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+            background-color: #222; color: white;
+            padding: 6px 12px; border-radius: 4px; font-size: 0.9em;
+            white-space: nowrap; opacity: 0; visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 1000;
+        }
+        [data-tooltip]:hover::after { opacity: 1; visibility: visible; }
+        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4a4f69; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        #attachedDocumentsTable {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid var(--table-border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #attachedDocumentsTable th,
+        #attachedDocumentsTable td {
+            border-bottom: 1px solid var(--table-border-color);
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 0.95em;
+        }
+        #attachedDocumentsTable th {
+            background-color: var(--table-header-bg);
+            color: var(--text-color);
+            font-weight: 600;
+            border-bottom-width: 2px;
+        }
+        #attachedDocumentsTable td {
+            background-color: var(--input-bg-color); /* Ensure this var is defined or map to existing */
+        }
+        #attachedDocumentsTable tr:last-child td {
+            border-bottom: none;
+        }
+        #attachedDocumentsTable tr:hover td {
+            background-color: var(--table-row-hover);
+        }
+        #attachedDocumentsTable .actions-cell {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* --- Toast Notification Styles --- */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-left: 5px solid;
+            opacity: 0;
+            transform: translateX(120%);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            max-width: 400px;
+            word-break: break-word;
+            font-size: 0.95em;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.success { border-color: var(--success-color); }
+        .toast.error { border-color: var(--error-color); }
+        .toast.info { border-color: var(--primary-color); }
+
+        /* Draggable Region */
+        .drag-region {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            -webkit-app-region: drag;
+            z-index: 99999;
+        }
+    </style>
+</head>
+<body>
+    <div class="drag-region"></div>
+    <div class="container">
+        
+
+        <div class="button-row">
+            <button id="btnSave">Download XML</button>
+            <button id="btnOpenFile">Open File</button>
+            <input type="file" id="excelFileInput" accept=".xls,.xlsx" style="display: none;">
+            <button id="btnClear">Clear All</button>
+        </div>
+        <hr>
+        
+        <div class="form-section">
+            
+            <div class="mig-row">
+                <div>
+                    <label for="srcPathInput">Source Excel File:</label>
+                    <input type="text" id="srcPathInput" class="info-field" readonly placeholder="No file selected">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            
+             <div class="mig-row">
+                <div class="full-width">
+                    <label for="clearanceOfficeSelect">Customs Clearance Office:</label>
+                    <select id="clearanceOfficeSelect">
+                        <option value="2206" data-name="AIR CARGO">2206 - AIR CARGO</option>
+                        <option value="2202" data-name="AIR CARGO - GLS" selected>2202 - AIR CARGO - GLS</option>
+                        <option value="2301" data-name="KF CAUSEWAY">2301 - KF CAUSEWAY</option>
+                    </select>
+                </div>
+            </div>
+            
+             <div class="mig-row">
+                <div>
+                    <label for="declarationTypeSelect">Declaration Type:</label>
+                    <select id="declarationTypeSelect">
+                        <option value="EX_1">EX 1 - Export</option>
+                        <option value="IM_4" selected>IM 4 - Import</option>
+                        <option value="IM_9">IM 9 - Import</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="exporterNameInput">Exporter Name:</label>
+                    <input type="text" id="exporterNameInput" placeholder="اسم المصدر">
+                </div>
+            </div>
+            <div class="mig-row">
+                 <div>
+                    <label for="consigneeCodeInput">CR number:</label>
+                    <input type="text" id="consigneeCodeInput" placeholder="سجل المستورد">
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="deferredPaymentCheckbox">
+                    <label for="deferredPaymentCheckbox" class="inline-label" data-tooltip="Adds Aramex credit payment .">Credit</label>
+                </div>
+            </div>
+             <div class="mig-row">
+                <div>
+                    <label for="arrivalZoneCodeInput">For export exit port:</label>
+                    <input type="text" id="arrivalZoneCodeInput" placeholder="2301, 2202">
+                </div>
+                 <div>
+                    <label for="borderNationalityInput">Border Nationality (opt., e.g., AE):</label>
+                    <input type="text" id="borderNationalityInput" maxlength="2" placeholder="AE">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            
+            <div class="mig-row">
+                 <div>
+                    <label for="acWeightInput">Actual Weight (kg):</label>
+                    <input type="number" id="acWeightInput" step="any" min="0.001" value="0">
+                </div>
+            </div>
+            <div class="toggle-switch-container">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="useExcelPackagesToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <label for="useExcelPackagesToggle" class="inline-label" style="font-size: 1.1em; font-weight: 500;">Use Package Data from Excel </label>
+            </div>
+            <div class="mig-row">
+                <div>
+                    <label for="packagesInput" data-tooltip="Used only when the Excel switch is OFF.">No. of Packages:</label>
+                    <input type="number" id="packagesInput" min="1" value="1">
+                </div>
+                <div>
+                    <label for="kindSelect" data-tooltip="Used only when the Excel switch is OFF.">Kind of Packages:</label>
+                    <select id="kindSelect">
+                        <option value="PX" data-name="Pallet">PX - Pallet</option>
+                        <option value="PK" data-name="Pack, Package" selected>PK - Pack, Package</option>
+                        <option value="CT" data-name="Carton">CT - Carton</option>
+                         <option value="PD" data-name="Diplomatic pouch">PD - Diplomatic pouch</option>
+                         <option value="PG" data-name="Plates">PG - Plates</option>
+                         <option value="PH" data-name="Pitcher">PH - Pitcher</option>
+                         <option value="PI" data-name="Pipe">PI - Pipe</option>
+                         <option value="PL" data-name="Pail">PL - Pail</option>
+                         <option value="PN" data-name="Plank">PN - Plank</option>
+                         <option value="PO" data-name="Pouch">PO - Pouch</option>
+                         <option value="PP" data-name="Part package">PP - Part package</option>
+                    </select>
+                </div>
+            </div>
+             <div class="mig-row">
+                <div>
+                    <label for="exCustomeSelect">Extended Customs Proc.:</label>
+                    <select id="exCustomeSelect">
+                        <option value="4000" selected>4000</option>
+                        <option value="4900">4900</option>
+                        <option value="1000">1000</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="naCustomeSelect">National Customs Proc.:</label>
+                    <select id="naCustomeSelect">
+                        <option value="000" selected>000</option>
+                        <option value="412">412</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mig-row">
+                <div>
+                    <label for="countryCodeInput">Export Country Code (e.g., AE):</label>
+                    <input type="text" id="countryCodeInput" value="AE" maxlength="2">
+                </div>
+                 <div>
+                    <label for="placeOfLoadingCodeInput">Place of Loading Code:</label>
+                    <input type="text" id="placeOfLoadingCodeInput" value="AEJEA">
+                </div>
+            </div>
+             <div class="mig-row">
+                <div class="full-width">
+                    <label>Mode of Transport:</label>
+                    <div>
+                        <input type="radio" name="shippingType" id="byTruckRadio" value="By Truck" checked> <label for="byTruckRadio" class="inline-label">By Truck</label>
+                        <input type="radio" name="shippingType" id="byAirRadio" value="By Air"> <label for="byAirRadio" class="inline-label">By Air</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            
+            <div class="mig-row">
+                <div>
+                    <label for="newRefTypeSelect">Document Type:</label>
+                    <select id="newRefTypeSelect">
+                        <option value="airwaybill" data-code="002">Airway Bill</option>
+                        <option value="invoice" data-code="003">Invoice</option>
+                        <option value="coo" data-code="017">Certificate of Origin</option>
+                        <option value="insurance" data-code="013">Insurance</option>
+                        <option value="other" data-code="999">Other Document</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="newRefNoInput">Reference No.:</label>
+                    <input type="text" id="newRefNoInput" placeholder="Enter Reference No.">
+                </div>
+                <div>
+                    <label for="newRefDateInput">Date:</label>
+                    <input type="date" id="newRefDateInput">
+                </div>
+                <div style="align-self: flex-end; min-width: auto;">
+                    <button id="btnAddSingleReference" type="button">Add Document</button>
+                </div>
+            </div>
+
+            <table id="attachedDocumentsTable">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Type</th>
+                        <th>Reference No.</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="referencesTableBody"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // Load XLSX library
+        const XLSX = window.require('xlsx');
+        const { ipcRenderer } = window.require('electron');
+        
+        // --- FINAL XML TEMPLATES (Matching user's desired output) ---
+        const fileXmlTemplate = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<TWM_SAD>
+<Export_release><Date_of_exit/><Time_of_exit/><Actual_office_of_exit_code/><Actual_office_of_exit_name/><Exit_reference/><Comments/></Export_release>
+<Previous_owner><Previous_owner_code/><Previous_owner_name/></Previous_owner>
+<Assessment_notice><Registration_year/><Assessment_year/><Total_item_taxes/><Statement_number/><Statement_date/><Statement_serial/><Payment_situation/><Item_tax_total/><Item_tax_total/><Item_tax_total/><Item_tax_total/><Item_tax_total/><Item_tax_total/><Item_tax_total/><Item_tax_total/></Assessment_notice>
+<Global_taxes/><Global_taxes/><Global_taxes/><Global_taxes/><Global_taxes/><Global_taxes/><Global_taxes/><Global_taxes/><Global_taxes/>
+<Property><Sad_selected_colour/><Date_of_arrival>{date_of_arrival}</Date_of_arrival><Nbers><Number_of_loading_lists/><Total_number_of_items>{total_items_count}</Total_number_of_items><Total_number_of_packages/></Nbers><Date_of_declaration/></Property>
+<Sad_origin_colour/>
+<Identification><Office_segment><Customs_clearance_office_code>{customs_clearance_office_code}</Customs_clearance_office_code><Customs_Clearance_office_name>{customs_clearance_office_name}</Customs_Clearance_office_name></Office_segment><Type><Type_of_declaration>{type_of_declaration}</Type_of_declaration><Declaration_gen_procedure_code>{declaration_gen_procedure_code}</Declaration_gen_procedure_code><Type_of_transit_document/></Type><Manifest_customs_office_code>{customs_clearance_office_code}</Manifest_customs_office_code><Manifest_registration_year>0</Manifest_registration_year><Manifest_registration_number>2025</Manifest_registration_number><Manifest_reference_number/><Manifest_date/><Registration><Serial_number/><Number/><Date/></Registration><Assessment><Serial_number/><Number/><Date/></Assessment><Receipt><Custom_office/><Serial_number/><Number/><Date/></Receipt></Identification>
+<Traders><Exporter><Exporter_code/><Exporter_name>{exporter_name}</Exporter_name><Exporter_tin/></Exporter><Consignee><Consignee_code>{consignee_code}</Consignee_code><Consignee_name/><Consignee_tin/></Consignee><Financial><Financial_code/><Financial_name/><Financial_tin/></Financial></Traders>
+<Declarant><Declarant_code>020472-01</Declarant_code><Declarant_name>ARAMEX BAHRAIN S.P.C
+Flat No.: 0000  Building No.: 407
+Block No.: 317  Road No.: 1705</Declarant_name><Reference><Year>2025</Year><Number/></Reference></Declarant>
+<General_information><Delivery_terms_comments/><Country><Country_first_destination/><Trading_country/><Export><Export_country_code>{country_code}</Export_country_code><Export_country_name/><Export_country_region/></Export><Destination><Destination_country_code>BH</Destination_country_code><Destination_country_name>Bahrain</Destination_country_name><Destination_country_region/></Destination><Country_of_origin_name>MANY</Country_of_origin_name></Country><Value_details>0</Value_details><CAP/></General_information>
+<Transport><Means_of_transport><Departure_arrival_information><Identity>{identity_mode_code}</Identity><Nationality>{border_nationality_departure}</Nationality></Departure_arrival_information><Border_information><Identity>{identity_mode_code}</Identity><Nationality>{border_nationality_border}</Nationality><Mode/></Border_information><Inland_mode_of_transport/></Means_of_transport><Container_flag>false</Container_flag><Delivery_terms><Code/><Place/><Situation>0</Situation></Delivery_terms><Border_office><Code>{arrival_zone_code}</Code><Name/></Border_office><Place_of_loading><Code>{place_of_loading_code}</Code><Name/></Place_of_loading><Location_of_goods>ARAMEX</Location_of_goods></Transport>
+<Financial><Financial_transaction><code1/><code2/></Financial_transaction><Bank><Code/><Name/><Branch/><Reference/></Bank><Terms><Code/><Description/></Terms><Deffered_payment_reference>{deffered_payment_reference}</Deffered_payment_reference><Mode_of_payment>CASH</Mode_of_payment><Amounts><Total_manual_taxes/><Global_taxes/><Totals_taxes/><Amount_To_Be_Paid/></Amounts><Guarantee><Amount/><Date/></Guarantee></Financial>
+<Warehouse><Identification/><Delay/></Warehouse><Transit><Destination><Office/></Destination><Seals><Number/><Identity/></Seals><Result_of_control/><Time_limit/><Officer_name/></Transit>
+<Valuation><Calculation_working_mode>0</Calculation_working_mode><Weight><Gross_weight>{total_gross_weight_header}</Gross_weight></Weight><Total_cost/><Total_CIF/><Gs_Invoice><Amount_national_currency/><Amount_foreign_currency/><Currency_code/><Currency_name/><Currency_rate/></Gs_Invoice><Gs_external_freight><Amount_national_currency/><Amount_foreign_currency/><Currency_code/><Currency_name/><Currency_rate/></Gs_external_freight><Gs_internal_freight><Amount_national_currency/><Amount_foreign_currency/><Currency_code/><Currency_name/><Currency_rate/></Gs_internal_freight><Gs_insurance><Amount_national_currency/><Amount_foreign_currency/><Currency_code/><Currency_name/><Currency_rate/></Gs_insurance><Gs_other_cost><Amount_national_currency/><Amount_foreign_currency/><Currency_code/><Currency_name/><Currency_rate/></Gs_other_cost><Gs_deduction><Amount_national_currency/><Amount_foreign_currency/><Currency_code/><Currency_name/><Currency_rate/></Gs_deduction><Total><Total_invoice>{total_invoice_value_header}</Total_invoice><Total_weight>{total_gross_weight_header}</Total_weight></Total></Valuation>
+{items}
+<GCC><Original_registration_code/><Original_registration_date/><Statistical_registration_code/><Statistical_registration_date/><FOB_amount/><FOB_currency/><FOB_NCY/><TAX_amount/><TAX_currency/><TAX_NCY/></GCC>
+{oth_hs_codes_list}
+</TWM_SAD>`;
+        
+        const itemXmlTemplate = `<Item>
+<Rank>{rank}</Rank>
+<Packages><Number_of_packages>{number_of_packages}</Number_of_packages><Marks1_of_packages/><Marks2_of_packages/><Kind_of_packages_code>{kind_of_packages_code}</Kind_of_packages_code><Kind_of_packages_name>{kind_of_packages_name}</Kind_of_packages_name><Package_code/></Packages>
+<Tarification><HScode><Commodity_code>{commodity_code}</Commodity_code><Precision_1>000</Precision_1><Precision_2>0000</Precision_2><Precision_3>0000</Precision_3></HScode><Extended_customs_procedure>{extended_customs_procedure}</Extended_customs_procedure><National_customs_procedure>{national_customs_procedure}</National_customs_procedure><Supplementary_unit><Supplementary_unit_code>LTR</Supplementary_unit_code><Supplementary_unit_name>Liter</Supplementary_unit_name><Supplementary_unit_quantity>{supplementary_unit_quantity}</Supplementary_unit_quantity></Supplementary_unit><Item_price>{amount_foreign_currency}</Item_price></Tarification>
+<Goods_description><Country_of_origin_code>{country_of_origin_code}</Country_of_origin_code><Harmonized_System_Code_Description/><Description_of_goods>{description_of_goods}</Description_of_goods></Goods_description>
+<Valuation_item><Weight_itm><Gross_weight_itm>{gross_weight_itm}</Gross_weight_itm><Net_weight_itm>{net_weight_itm}</Net_weight_itm></Weight_itm><Item_Invoice><Amount_foreign_currency>{amount_foreign_currency}</Amount_foreign_currency></Item_Invoice><item_external_freight><Currency_code>BHD</Currency_code><Currency_rate>1</Currency_rate></item_external_freight></Valuation_item>
+{item_attached_documents_list}
+</Item>`;
+        
+        const othHsCodesTemplate = `<OthHSCodes><Item_number>{rank}</Item_number><HSCode>{hs_code_19}</HSCode><HSDescription>{description_of_goods}</HSDescription><DestHSCode>{hs_code_12}</DestHSCode><DestHSDescription>Desc for {commodity_code}</DestHSDescription></OthHSCodes>`;
+
+        const attachedDocumentBlockTemplate = `<Attached_documents>
+<Rank>{rank}</Rank>
+<Attached_document_code>{code}</Attached_document_code>
+<Attached_document_name>{desc}</Attached_document_name>
+<Attached_document_reference>{no}</Attached_document_reference>
+<Attached_document_date>{date}</Attached_document_date>
+<Attached_document_scan/>
+</Attached_documents>`;
+
+        // --- DATA AND STATE VARIABLES ---
+        let excelData = null;
+        let sourceExcelPath = null; // To store the full path of the opened Excel file
+        const LOCAL_STORAGE_FORM_KEY = 'aramexXmlFormData_v18_electronFix';
+        const LOCAL_STORAGE_REFS_KEY = 'aramexXmlReferences_v18_electronFix';
+        let autoSaveEnabled = true;
+        let referenceRankCounter = 1;
+
+        function getElem(id) { return document.getElementById(id); }
+
+        const formFieldIds = [
+            'clearanceOfficeSelect', 'declarationTypeSelect', 'exporterNameInput', 'consigneeCodeInput',
+            'deferredPaymentCheckbox', 'arrivalZoneCodeInput', 'borderNationalityInput',
+            'packagesInput', 'kindSelect', 'exCustomeSelect', 'naCustomeSelect',
+            'acWeightInput', 'countryCodeInput', 'placeOfLoadingCodeInput', 'useExcelPackagesToggle'
+        ];
+        const refFormFieldIds = ['newRefTypeSelect', 'newRefNoInput', 'newRefDateInput'];
+
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM loaded. Initializing...");
+            
+            // Set default values programmatically first
+            setDefaultFormValues();
+
+            // Load saved data, which will overwrite defaults if present
+            loadAllData();
+
+            // Then, attach all event listeners
+            attachEventListeners();
+            
+            console.log("Initialization complete. Listeners attached.");
+        });
+
+        function setDefaultFormValues() {
+            getElem('clearanceOfficeSelect').value = '2202';
+            getElem('declarationTypeSelect').value = 'IM_4';
+            getElem('packagesInput').value = '1';
+            getElem('acWeightInput').value = '1';
+            getElem('kindSelect').value = 'PK';
+            getElem('exCustomeSelect').value = '4000';
+            getElem('naCustomeSelect').value = '000';
+            getElem('countryCodeInput').value = 'AE';
+            getElem('placeOfLoadingCodeInput').value = 'AEJEA';
+            getElem('byTruckRadio').checked = true;
+            getElem('useExcelPackagesToggle').checked = true;
+        }
+
+        function attachEventListeners() {
+            const btnSave = getElem('btnSave');
+            const btnOpenFile = getElem('btnOpenFile');
+            const excelFileInputElem = getElem('excelFileInput');
+            const btnClear = getElem('btnClear');
+            const btnAddSingleReference = getElem('btnAddSingleReference');
+
+            if (excelFileInputElem) excelFileInputElem.addEventListener('change', handleExcelFile);
+            if (btnOpenFile) btnOpenFile.addEventListener('click', () => excelFileInputElem.click());
+            if (btnClear) btnClear.addEventListener('click', () => {
+                if (confirm("Are you sure you want to clear all fields and remove saved data?")) {
+                    clearForm(true);
+                }
+            });
+            if (btnSave) btnSave.addEventListener('click', processAndGenerateXml);
+            if (btnAddSingleReference) btnAddSingleReference.addEventListener('click', addReferenceToTable);
+
+            // Listeners for auto-save
+            formFieldIds.forEach(id => {
+                const field = getElem(id);
+                if (field) field.addEventListener((field.type === 'checkbox' || field.tagName === 'SELECT') ? 'change' : 'input', saveAllData);
+            });
+            refFormFieldIds.forEach(id => {
+                 const field = getElem(id);
+                 if(field) field.addEventListener('input', saveAllData);
+            });
+            document.querySelectorAll('input[name="shippingType"]').forEach(radio => radio.addEventListener('change', saveAllData));
+        }
+
+        function showToast(message, type = 'info', duration = 5000) {
+            const container = getElem('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                // Remove the element after the transition is complete
+                toast.addEventListener('transitionend', () => {
+                    if (toast.parentNode === container) {
+                         container.removeChild(toast);
+                    }
+                });
+            }, duration);
+        }
+
+        function loadReferenceForEditing(button) {
+            const row = button.closest('tr');
+            if (!row) return;
+
+            const cells = row.cells;
+            const typeValue = cells[1].dataset.docTypeValue;
+            const refNo = cells[2].textContent;
+            const date = cells[3].textContent;
+
+            // Populate the form fields
+            getElem('newRefTypeSelect').value = typeValue;
+            getElem('newRefNoInput').value = refNo;
+            getElem('newRefDateInput').value = date;
+
+            // Remove the row from the table
+            row.remove();
+
+            // Update ranks and save
+            updateTableRanks();
+            saveAllData();
+
+            showToast('Reference loaded. Make changes and click "Add Document".', 'info', 6000);
+        }
+
+        // --- CORE FUNCTIONS ---
+        function handleExcelFile(event) {
+            console.log("handleExcelFile function triggered.");
+            const file = event.target.files[0];
+            const srcPathInputElem = getElem('srcPathInput');
+
+            if (!file) {
+                if (srcPathInputElem) srcPathInputElem.value = "No file selected";
+                excelData = null;
+                sourceExcelPath = null;
+                if (event.target) event.target.value = null;
+                saveAllData();
+                return;
+            }
+
+            sourceExcelPath = file.path; // Electron-specific property to get the full path
+            if (srcPathInputElem) srcPathInputElem.value = file.name;
+
+            if (!file.name.match(/\.(xls|xlsx)$/i)) {
+                showToast("Invalid file type. Please select an Excel file (.xls or .xlsx).", 'error');
+                if (srcPathInputElem) srcPathInputElem.value = "Invalid file type";
+                excelData = null;
+                sourceExcelPath = null;
+                if (event.target) event.target.value = null;
+                saveAllData();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    
+                    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+                        throw new Error("The Excel file has no sheets.");
+                    }
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    if (!worksheet) {
+                        throw new Error("First sheet is empty or cannot be read.");
+                    }
+                    
+                    excelData = XLSX.utils.sheet_to_json(worksheet, { 
+                        header: 1,
+                        raw: false,
+                        defval: "",
+                        blankrows: false
+                    });
+                    
+                    if (!excelData || excelData.length === 0) {
+                        throw new Error("No data found in the Excel file.");
+                    }
+                    
+                    console.log("Excel data loaded successfully:", excelData);
+                    showToast(`Excel file "${file.name}" loaded successfully! Found ${excelData.length - 1} data rows.`, 'success');
+                    saveAllData();
+                    
+                } catch (error) {
+                    console.error("Error processing Excel file:", error);
+                    showToast(`Error processing Excel file: ${error.message}`, 'error');
+                    if (srcPathInputElem) srcPathInputElem.value = "Error loading file";
+                    excelData = null;
+                    sourceExcelPath = null;
+                    if (event.target) event.target.value = null;
+                    saveAllData();
+                }
+            };
+
+            reader.onerror = function(error) {
+                console.error("FileReader error:", error);
+                showToast("Error reading file. Please try again.", 'error');
+                if (srcPathInputElem) srcPathInputElem.value = "File read error";
+                excelData = null;
+                sourceExcelPath = null;
+                if (event.target) event.target.value = null;
+                saveAllData();
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function createReferenceRow(rank, typeValue, typeText, typeCode, refNo, date) {
+            const newRow = document.createElement('tr');
+            
+            newRow.insertCell().textContent = rank;
+            
+            const typeCell = newRow.insertCell();
+            typeCell.textContent = typeText;
+            typeCell.dataset.docTypeCode = typeCode;
+            typeCell.dataset.docTypeValue = typeValue;
+            
+            newRow.insertCell().textContent = refNo;
+            newRow.insertCell().textContent = date;
+            
+            const actionsCell = newRow.insertCell();
+            actionsCell.classList.add('actions-cell');
+            
+            const editBtn = document.createElement('button');
+            editBtn.textContent = "Edit";
+            editBtn.type = "button";
+            editBtn.classList.add('edit-ref-btn-table');
+            editBtn.onclick = function() { loadReferenceForEditing(this); };
+            actionsCell.appendChild(editBtn);
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = "Remove";
+            removeBtn.type = "button";
+            removeBtn.classList.add('remove-ref-btn-table');
+            removeBtn.onclick = function() {
+                this.closest('tr').remove();
+                updateTableRanks();
+                saveAllData();
+            };
+            actionsCell.appendChild(removeBtn);
+            
+            return newRow;
+        }
+
+        function addReferenceToTable() {
+            const typeSelect = getElem('newRefTypeSelect');
+            const refNoInput = getElem('newRefNoInput');
+            const dateInput = getElem('newRefDateInput');
+            const tableBody = getElem('referencesTableBody');
+
+            const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+            const typeValue = selectedOption.value;
+            const typeText = selectedOption.text;
+            const typeCode = selectedOption.dataset.code;
+            const refNo = refNoInput.value.trim();
+            const date = dateInput.value;
+
+            if (!typeValue || !refNo || !date) {
+                showToast("Please select a document type, and enter a reference number and date.", 'error');
+                return;
+            }
+
+            const newRow = createReferenceRow(referenceRankCounter, typeValue, typeText, typeCode, refNo, date);
+            tableBody.appendChild(newRow);
+
+            referenceRankCounter++;
+            refNoInput.value = '';
+            dateInput.value = '';
+            typeSelect.selectedIndex = 0;
+            saveAllData();
+        }
+
+        function updateTableRanks() {
+            const tableBody = getElem('referencesTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].cells[0].textContent = i + 1;
+            }
+            referenceRankCounter = rows.length + 1;
+        }
+
+        function collectReferences() {
+            const collectedRefs = [];
+            const tableBody = getElem('referencesTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].cells;
+                collectedRefs.push({
+                    rank: cells[0].textContent,
+                    typeText: cells[1].textContent,
+                    typeCode: cells[1].dataset.docTypeCode,
+                    typeValue: cells[1].dataset.docTypeValue,
+                    ref: cells[2].textContent,
+                    date: cells[3].textContent
+                });
+            }
+            return collectedRefs;
+        }
+
+        function escapeXml(unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe.replace(/&/g, "&amp;")
+                         .replace(/</g, "&lt;")
+                         .replace(/>/g, "&gt;")
+                         .replace(/"/g, "&quot;")
+                         .replace(/'/g, "&apos;")
+                         .replace(/\n/g, "")
+                         .replace(/\r/g, "");
+        }
+
+        function clearForm(userInitiatedClear = false) {
+            // Keep the state of the toggle
+            const useExcelToggleState = getElem('useExcelPackagesToggle').checked;
+
+            formFieldIds.forEach(id => {
+                const field = getElem(id);
+                if (field) {
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        field.checked = false;
+                    } else if (field.tagName === 'SELECT') {
+                        const selectedOption = field.querySelector('option[selected]');
+                        const firstOption = field.options[0];
+                        field.value = (selectedOption ? selectedOption.value : '') || (firstOption ? firstOption.value : '') || '';
+                    } else {
+                        field.value = '';
+                    }
+                }
+            });
+            // Restore defaults
+            setDefaultFormValues();
+            // Restore the toggle state
+            getElem('useExcelPackagesToggle').checked = useExcelToggleState;
+
+
+            const tableBody = getElem('referencesTableBody');
+            if (tableBody) tableBody.innerHTML = '';
+            referenceRankCounter = 1;
+            getElem('srcPathInput').value = 'No file selected';
+            const excelFileInputElem = getElem('excelFileInput');
+            if (excelFileInputElem) excelFileInputElem.value = '';
+            excelData = null;
+            sourceExcelPath = null;
+            
+            if (userInitiatedClear) {
+                localStorage.removeItem(LOCAL_STORAGE_FORM_KEY);
+                localStorage.removeItem(LOCAL_STORAGE_REFS_KEY);
+                console.log("Form and saved data cleared by user.");
+                 // After clearing storage, re-apply defaults to the UI
+                setDefaultFormValues();
+            }
+        }
+
+        function getPackageNameFromCode(code) {
+            const select = getElem('kindSelect');
+            for(let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === code) {
+                    return select.options[i].dataset.name || 'Part package';
+                }
+            }
+            return 'Part package'; // Default if not found
+        }
+		
+        async function processAndGenerateXml() {
+            console.log("Starting XML generation with aggregation logic...");
+            if (!excelData || excelData.length <= 1) {
+                showToast('Please load a valid Excel file with data rows first.', 'error');
+                return;
+            }
+        
+            const sourceFileName = getElem('srcPathInput').value;
+            const outputFileNameBase = sourceFileName.includes('.') 
+                ? sourceFileName.substring(0, sourceFileName.lastIndexOf('.')) 
+                : (sourceFileName || 'aramex_shipment');
+            
+            const today = new Date().toISOString().slice(0, 10);
+        
+            const clearanceOfficeSelect = getElem('clearanceOfficeSelect');
+            const selectedOfficeOption = clearanceOfficeSelect.options[clearanceOfficeSelect.selectedIndex];
+        
+            const formData = {
+                clearanceOfficeCode: selectedOfficeOption.value,
+                clearanceOfficeName: selectedOfficeOption.dataset.name,
+                declarationTypeFull: getElem('declarationTypeSelect').value,
+                exporterName: getElem('exporterNameInput').value.trim() || '.',
+                consigneeCode: getElem('consigneeCodeInput').value.trim() || '0',
+                isDeferredPayment: getElem('deferredPaymentCheckbox').checked,
+                arrivalZoneCode: getElem('arrivalZoneCodeInput').value.trim().toUpperCase(),
+                borderNationality: getElem('borderNationalityInput').value.trim().toUpperCase(),
+                dateOfArrival: today,
+                packages: getElem('packagesInput').value.trim(),
+                kind: getElem('kindSelect').value,
+                exCustome: getElem('exCustomeSelect').value,
+                naCustome: getElem('naCustomeSelect').value,
+                acWeight: parseFloat(getElem('acWeightInput').value) || 0,
+                countryCode: getElem('countryCodeInput').value.trim().toUpperCase(),
+                placeOfLoadingCode: getElem('placeOfLoadingCodeInput').value.trim().toUpperCase(),
+                shippingType: document.querySelector('input[name="shippingType"]:checked').value,
+                references: collectReferences(),
+                useExcelPackages: getElem('useExcelPackagesToggle').checked,
+            };
+        
+            if (formData.acWeight <= 0) {
+                showToast('Please fill required fields: Actual Weight (>0).', 'error');
+                return;
+            }
+        
+            const [typeOfDecl, declGenProcCode] = formData.declarationTypeFull.split('_');
+            const totalGrossWeightFromForm = formData.acWeight;
+            
+            // --- START: MODIFIED AGGREGATION LOGIC ---
+            // Use a Map to group items by HS Code, Origin, and Description.
+            const itemGroups = new Map();
+            excelData.slice(1).forEach((row) => {
+                if (row && row.length > 0 && (row[0] || "").toString().trim()) {
+                    const commodityCode = (row[0] || "").toString().trim();
+                    const origin = (row[1] || "").toString().trim().toUpperCase();
+                    const description = (row[2] || "").toString().trim();
+                    const quantity = parseFloat(row[3] || 0);
+                    const price = parseFloat(row[4] || 0);
+                    const itemPackages = parseInt(row[5], 10) || 0;
+                    const itemPackageType = (row[6] || "").toString().trim().toUpperCase();
+                    
+                    if (commodityCode && commodityCode.length === 8 && origin && quantity >= 0 && price >= 0) {
+                        // The key uniquely identifies a group of items to be merged.
+                        const groupKey = `${commodityCode}-${origin}-${description.toUpperCase()}`;
+        
+                        if (!itemGroups.has(groupKey)) {
+                            // If this is the first time we see this key, create a new entry.
+                            itemGroups.set(groupKey, { 
+                                commodityCode, 
+                                origin, 
+                                description, 
+                                quantity: 0, 
+                                price: 0, 
+                                itemPackages: 0, 
+                                itemPackageType: itemPackageType // Store the package type from the first item.
+                            });
+                        }
+                        
+                        // Get the existing group and add the current row's values to it.
+                        const group = itemGroups.get(groupKey);
+                        group.quantity += quantity;
+                        group.price += price;
+                        group.itemPackages += itemPackages;
+                    }
+                }
+            });
+        
+            // Convert the Map of groups into an array of items for processing.
+            const processedItems = Array.from(itemGroups.values());
+            // --- END: MODIFIED AGGREGATION LOGIC ---
+            
+            if (processedItems.length === 0) {
+                showToast("No valid items found in Excel to process.", 'error');
+                return;
+            }
+            
+            const totalCurrencyValueFromExcel = processedItems.reduce((sum, item) => sum + item.price, 0);
+        
+            // --- ATTACHED DOCUMENTS (No change) ---
+            let allAttachedDocumentsXmlForItem = "";
+            if (formData.references && formData.references.length > 0) {
+                formData.references.forEach(ref => {
+                    let singleDocBlock = attachedDocumentBlockTemplate;
+                    singleDocBlock = singleDocBlock.replace(/{rank}/g, escapeXml(ref.rank));
+                    singleDocBlock = singleDocBlock.replace(/{code}/g, escapeXml(ref.typeCode));
+                    singleDocBlock = singleDocBlock.replace(/{desc}/g, escapeXml(ref.typeText));
+                    singleDocBlock = singleDocBlock.replace(/{no}/g, escapeXml(ref.ref));
+                    singleDocBlock = singleDocBlock.replace(/{date}/g, escapeXml(ref.date));
+                    allAttachedDocumentsXmlForItem += singleDocBlock + "\n";
+                });
+            }
+        
+            // --- WEIGHT DISTRIBUTION LOGIC (No change) ---
+            const MIN_ITEM_WEIGHT = 0.020;
+            let itemFinalWeights = new Array(processedItems.length).fill(0);
+            if (processedItems.length > 0) {
+                const totalMinWeightRequired = processedItems.length * MIN_ITEM_WEIGHT;
+                if (totalGrossWeightFromForm < totalMinWeightRequired - 1e-9) {
+                    showToast(`Error: Total weight (${totalGrossWeightFromForm.toFixed(3)}kg) is insufficient for ${processedItems.length} items. Minimum required: ${totalMinWeightRequired.toFixed(3)}kg.`, 'error', 6000);
+                    return;
+                }
+                let weightAssignedForMinimums = 0;
+                processedItems.forEach((item, index) => {
+                    itemFinalWeights[index] = MIN_ITEM_WEIGHT;
+                    weightAssignedForMinimums += MIN_ITEM_WEIGHT;
+                });
+                let remainingWeightForProportionalDist = totalGrossWeightFromForm - weightAssignedForMinimums;
+                if (remainingWeightForProportionalDist > 1e-9) {
+                    let totalItemValueForDistribution = processedItems.reduce((sum, item) => sum + item.price, 0);
+                    if (totalItemValueForDistribution > 1e-9) {
+                        processedItems.forEach((item, index) => {
+                            const proportionalShare = (item.price / totalItemValueForDistribution) * remainingWeightForProportionalDist;
+                            itemFinalWeights[index] += proportionalShare;
+                        });
+                    } else {
+                        const equalShare = remainingWeightForProportionalDist / processedItems.length;
+                        processedItems.forEach((item, index) => { itemFinalWeights[index] += equalShare; });
+                    }
+                }
+                let currentSumOfCalculatedWeights = itemFinalWeights.reduce((sum, w) => sum + w, 0);
+                let differenceToAdjustSum = totalGrossWeightFromForm - currentSumOfCalculatedWeights;
+                if (Math.abs(differenceToAdjustSum) > 1e-9 && processedItems.length > 0) {
+                    const adjIndex = processedItems.length - 1;
+                    itemFinalWeights[adjIndex] += differenceToAdjustSum;
+                    if (itemFinalWeights[adjIndex] < 0) itemFinalWeights[adjIndex] = 0;
+                }
+            }
+            
+            // --- XML GENERATION (No change, uses `processedItems` which is now aggregated) ---
+            let finalDocXml = fileXmlTemplate;
+            
+            finalDocXml = finalDocXml.replace(/{customs_clearance_office_code}/g, escapeXml(formData.clearanceOfficeCode));
+            finalDocXml = finalDocXml.replace(/{customs_clearance_office_name}/g, escapeXml(formData.clearanceOfficeName));
+            finalDocXml = finalDocXml.replace(/{date_of_arrival}/g, escapeXml(formData.dateOfArrival));
+            finalDocXml = finalDocXml.replace(/{total_items_count}/g, processedItems.length.toString());
+            finalDocXml = finalDocXml.replace(/{type_of_declaration}/g, escapeXml(typeOfDecl));
+            finalDocXml = finalDocXml.replace(/{declaration_gen_procedure_code}/g, escapeXml(declGenProcCode));
+            finalDocXml = finalDocXml.replace(/{exporter_name}/g, escapeXml(formData.exporterName));
+            finalDocXml = finalDocXml.replace(/{consignee_code}/g, escapeXml(formData.consigneeCode));
+            finalDocXml = finalDocXml.replace(/{country_code}/g, escapeXml(formData.countryCode));
+            finalDocXml = finalDocXml.replace(/{identity_mode_code}/g, escapeXml(formData.shippingType));
+            finalDocXml = finalDocXml.replace(/{border_nationality_departure}/g, escapeXml(formData.borderNationality));
+            finalDocXml = finalDocXml.replace(/{border_nationality_border}/g, escapeXml(formData.borderNationality));
+            finalDocXml = finalDocXml.replace(/{arrival_zone_code}/g, escapeXml(formData.arrivalZoneCode));
+            finalDocXml = finalDocXml.replace(/{place_of_loading_code}/g, escapeXml(formData.placeOfLoadingCode));
+            finalDocXml = finalDocXml.replace(/{deffered_payment_reference}/g, formData.isDeferredPayment ? "020472-01" : "");
+            finalDocXml = finalDocXml.replace(/{total_gross_weight_header}/g, totalGrossWeightFromForm.toFixed(3));
+            finalDocXml = finalDocXml.replace(/{total_invoice_value_header}/g, totalCurrencyValueFromExcel.toFixed(3));
+            
+            let itemsXmlAggregated = "";
+            let othHsCodesXmlString = "";
+        
+            processedItems.forEach((item, index) => {
+                let currentItemXml = itemXmlTemplate;
+                currentItemXml = currentItemXml.replace(/{rank}/g, index + 1);
+                
+                let itemPackageCount, packageKind, packageKindName;
+        
+                if (formData.useExcelPackages) {
+                    itemPackageCount = item.itemPackages || 0;
+                    packageKind = item.itemPackageType || formData.kind;
+                } else {
+                    itemPackageCount = (index === 0) ? formData.packages : 0;
+                    packageKind = (index === 0) ? formData.kind : 'PP';
+                }
+        
+                packageKindName = getPackageNameFromCode(packageKind);
+        
+                currentItemXml = currentItemXml.replace(/{number_of_packages}/g, itemPackageCount);
+                currentItemXml = currentItemXml.replace(/{kind_of_packages_code}/g, packageKind);
+                currentItemXml = currentItemXml.replace(/{kind_of_packages_name}/g, escapeXml(packageKindName));
+                
+                currentItemXml = currentItemXml.replace(/{commodity_code}/g, escapeXml(item.commodityCode));
+                currentItemXml = currentItemXml.replace(/{extended_customs_procedure}/g, escapeXml(formData.exCustome));
+                currentItemXml = currentItemXml.replace(/{national_customs_procedure}/g, escapeXml(formData.naCustome));
+                currentItemXml = currentItemXml.replace(/{supplementary_unit_quantity}/g, item.quantity.toString());
+                currentItemXml = currentItemXml.replace(/{country_of_origin_code}/g, escapeXml(item.origin.toUpperCase()));
+                currentItemXml = currentItemXml.replace(/{description_of_goods}/g, escapeXml(item.description.toUpperCase()));
+                currentItemXml = currentItemXml.replace(/{amount_foreign_currency}/g, item.price.toFixed(2));
+                
+                const itemWeight = (itemFinalWeights[index] || 0).toFixed(3);
+                currentItemXml = currentItemXml.replace(/{gross_weight_itm}/g, itemWeight);
+                currentItemXml = currentItemXml.replace(/{net_weight_itm}/g, itemWeight);
+                
+                // Attach all documents to the first item only
+                currentItemXml = currentItemXml.replace(/{item_attached_documents_list}/g, index === 0 ? allAttachedDocumentsXmlForItem.trim() : "");
+        
+                itemsXmlAggregated += currentItemXml + "\n";
+        
+                let currentOthCodeXml = othHsCodesTemplate;
+                currentOthCodeXml = currentOthCodeXml.replace(/{rank}/g, index + 1);
+                currentOthCodeXml = currentOthCodeXml.replace(/{commodity_code}/g, escapeXml(item.commodityCode));
+                currentOthCodeXml = currentOthCodeXml.replace(/{hs_code_19}/g, escapeXml(item.commodityCode) + '00000000000');
+                currentOthCodeXml = currentOthCodeXml.replace(/{hs_code_12}/g, escapeXml(item.commodityCode) + '0000');
+                currentOthCodeXml = currentOthCodeXml.replace(/{description_of_goods}/g, escapeXml(item.description.toUpperCase()));
+                othHsCodesXmlString += currentOthCodeXml + "\n";
+            });
+        
+            finalDocXml = finalDocXml.replace(/{items}/g, itemsXmlAggregated.trim());
+            finalDocXml = finalDocXml.replace(/{oth_hs_codes_list}/g, othHsCodesXmlString.trim());
+            
+            await downloadXml(outputFileNameBase + ".xml", finalDocXml);
+        }
+
+        function saveAllData() {
+            if (!autoSaveEnabled) return;
+            const formDataToSave = {};
+            formFieldIds.forEach(id => {
+                const field = getElem(id);
+                if (field) formDataToSave[id] = field.type === 'checkbox' ? field.checked : field.value;
+            });
+            const selectedShippingType = document.querySelector('input[name="shippingType"]:checked');
+            if (selectedShippingType) formDataToSave['shippingType'] = selectedShippingType.id;
+
+            refFormFieldIds.forEach(id => {
+                const field = getElem(id);
+                if (field) formDataToSave[id] = field.value;
+            });
+            const srcPathInputElem = getElem('srcPathInput');
+            if (srcPathInputElem) formDataToSave['srcPathInput'] = srcPathInputElem.value;
+            formDataToSave['sourceExcelPath'] = sourceExcelPath; // Save the full path too
+
+            localStorage.setItem(LOCAL_STORAGE_FORM_KEY, JSON.stringify(formDataToSave));
+            const referencesTableData = collectReferences();
+            localStorage.setItem(LOCAL_STORAGE_REFS_KEY, JSON.stringify(referencesTableData));
+        }
+
+        function loadAllData() {
+            const savedFormData = localStorage.getItem(LOCAL_STORAGE_FORM_KEY);
+            if (savedFormData) {
+                const formData = JSON.parse(savedFormData);
+                formFieldIds.forEach(id => {
+                    const field = getElem(id);
+                    if (field && formData[id] !== undefined) {
+                        if (field.type === 'checkbox') field.checked = formData[id];
+                        else field.value = formData[id];
+                    }
+                });
+                if (formData['shippingType']) {
+                    const selRadio = getElem(formData['shippingType']);
+                    if (selRadio) selRadio.checked = true;
+                }
+
+                refFormFieldIds.forEach(id => {
+                    const field = getElem(id);
+                    if (field && formData[id] !== undefined) field.value = formData[id];
+                });
+
+                const srcPathInputElem = getElem('srcPathInput');
+                if (srcPathInputElem && formData['srcPathInput']) {
+                    srcPathInputElem.value = formData['srcPathInput'];
+                    // Restore full path if it was saved
+                    sourceExcelPath = formData['sourceExcelPath'] || null;
+                    if (formData['srcPathInput'].startsWith("No file") || formData['srcPathInput'].startsWith("Error")) {
+                        excelData = null;
+                    }
+                } else if (srcPathInputElem) {
+                    srcPathInputElem.value = 'No file selected';
+                    excelData = null;
+                    sourceExcelPath = null;
+                }
+            }
+            const savedReferences = localStorage.getItem(LOCAL_STORAGE_REFS_KEY);
+            if (savedReferences) {
+                const referencesData = JSON.parse(savedReferences);
+                const tableBody = getElem('referencesTableBody');
+                tableBody.innerHTML = '';
+                referenceRankCounter = 1;
+                referencesData.forEach(refData => {
+                    const newRow = createReferenceRow(refData.rank, refData.typeValue, refData.typeText, refData.typeCode, refData.ref, refData.date);
+                    tableBody.appendChild(newRow);
+                    referenceRankCounter = Math.max(referenceRankCounter, parseInt(refData.rank) + 1);
+                });
+            }
+        }
+
+        async function downloadXml(filename, text) {
+            const path = window.require('path');
+            let defaultSavePath = filename;
+
+            if (sourceExcelPath) {
+                const dir = path.dirname(sourceExcelPath);
+                defaultSavePath = path.join(dir, filename);
+            }
+
+            const savePath = await ipcRenderer.invoke('dialog:showSaveDialog', {
+                title: 'Save XML File',
+                defaultPath: defaultSavePath,
+                filters: [
+                    { name: 'XML Files', extensions: ['xml'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (savePath) {
+                const fs = window.require('fs');
+                fs.writeFile(savePath, text, { encoding: 'utf-8' }, (err) => {
+                    if (err) {
+                        console.error('Failed to save file:', err);
+                        showToast(`Error saving file: ${err.message}`, 'error');
+                    } else {
+                        console.log('File saved to:', savePath);
+                        showToast(`File "${path.basename(savePath)}" saved successfully!`, 'success');
+                    }
+                });
+            } else {
+                showToast('Save operation was cancelled.', 'info');
+            }
+        }
+
+    </script>
+</body>
+</html>
